@@ -34,14 +34,16 @@
         <h2>Choose the Hunter</h2>
         <div class="spinner-wrap">
           <div class="spinner" aria-label="Player selector">
+            <!-- Only this FACE rotates -->
             <div id="spinnerFace" class="spinner-face">
-              <!-- 12 ticks (spin with the face) -->
+              <div class="ring"></div>
+              <!-- 12 ticks -->
               <div class="tick t1"></div><div class="tick t2"></div><div class="tick t3"></div><div class="tick t4"></div>
               <div class="tick t5"></div><div class="tick t6"></div><div class="tick t7"></div><div class="tick t8"></div>
               <div class="tick t9"></div><div class="tick t10"></div><div class="tick t11"></div><div class="tick t12"></div>
               <div class="centre-cap"></div>
             </div>
-            <!-- Fixed arrow -->
+            <!-- Fixed arrow at top -->
             <div class="arrow"></div>
           </div>
         </div>
@@ -56,7 +58,7 @@
     <section id="screen-join" class="screen">
       <div class="card">
         <h2>Set Your Interval</h2>
-        <p class="muted small">One roll only during a game. Returning to Home starts a new game and lets you roll again.</p>
+        <p class="muted small">One roll only during a game. Going Home starts a new game and lets you roll again.</p>
 
         <div class="slot-wrap">
           <div class="slot">
@@ -89,7 +91,7 @@
       <div class="card timer-card">
         <div id="countdown" class="countdown">00:30</div>
         <div class="actions prestart actions-center">
-          <button id="btnEnableAudio" class="secondary" type="button">Enable sound</button>
+          <button id="btnTimerTestBeep" class="ghost" type="button">Test beep</button>
           <button id="btnStart" class="primary" type="button">Start</button>
         </div>
       </div>
@@ -109,7 +111,7 @@
           <li>4+ players, confined space, walking only.</li>
           <li>Host: <em>Host New Game → Spin</em> to pick the Hunter.</li>
           <li>Prey: <em>Join Game → Spin</em> for a random 0:00–2:00 interval.</li>
-          <li>Tap <em>Enable sound</em>, then <em>Start</em>. Your roll is final for this game.</li>
+          <li>Press <em>Start</em> to begin your timer. Your roll is final for this game.</li>
           <li>Final 10 seconds are red; the phone beeps at 0 and repeats.</li>
         </ol>
       </div>
