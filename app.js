@@ -57,24 +57,32 @@
   qs('#btnHost').addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin').addEventListener('click', () => { resetGameState(); show('join'); });
 
-  // ---------- Host spinner (ARROW ROTATES; dial static) ----------
-  const arrowRotor = qs('#arrowRotor');
-  let spinning = false, spinAngle = 0;
-  function randomSpinAngle() {
-    const fullTurns = 4 + Math.floor(Math.random() * 4); // 4–7 turns
-    const extra = Math.random() * 360;
-    return fullTurns * 360 + extra;
-  }
-  qs('#btnSpin').addEventListener('click', () => {
-    if (spinning) return;
-    spinning = true;
-    const delta = randomSpinAngle();
-    spinAngle += delta;
-    arrowRotor.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
-    arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${spinAngle}deg)`;
-    setTimeout(() => { arrowRotor.style.transition = 'none'; spinning = false; }, 2900);
-  });
-  qs('#btnHostBack').addEventListener('click', () => show('home'));
+// ---------- Host spinner (ARROW ROTATES; dial static) ----------
+const arrowRotor = qs('#arrowRotor');
+let spinning = false, spinAngle = 0;
+
+qs('#btnSpin').addEventListener('click', () => {
+  if (spinning) return;
+  spinning = true;
+
+  const SLOTS = 12;                 // 12 notches → every 30°
+  const FULL_TURNS = 4 + Math.floor(Math.random() * 4);   // 4–7 full spins
+  const slotIndex = Math.floor(Math.random() * SLOTS);    // 0..11
+
+  const step = 360 / SLOTS;         // 30°
+  const targetDelta = FULL_TURNS * 360 + slotIndex * step;
+
+  spinAngle += targetDelta;         // accumulate so successive spins continue
+  arrowRotor.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
+  arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${spinAngle}deg)`;
+
+  setTimeout(() => {
+    arrowRotor.style.transition = 'none';
+    // keep angle tidy (avoid huge numbers)
+    spinAngle = spinAngle % 360;
+    spinning = false;
+  }, 2900);
+});
 
   // ---------- Join: one-time roll per game, reset on Home ----------
   const slotMin = qs('#slotMin');
