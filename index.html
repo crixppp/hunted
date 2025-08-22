@@ -34,17 +34,18 @@
         <h2>Choose the Hunter</h2>
         <div class="spinner-wrap">
           <div class="spinner" aria-label="Player selector">
-            <!-- Only this FACE rotates -->
-            <div id="spinnerFace" class="spinner-face">
+            <!-- Static dial with ticks -->
+            <div class="spinner-face">
               <div class="ring"></div>
-              <!-- 12 ticks -->
               <div class="tick t1"></div><div class="tick t2"></div><div class="tick t3"></div><div class="tick t4"></div>
               <div class="tick t5"></div><div class="tick t6"></div><div class="tick t7"></div><div class="tick t8"></div>
               <div class="tick t9"></div><div class="tick t10"></div><div class="tick t11"></div><div class="tick t12"></div>
               <div class="centre-cap"></div>
             </div>
-            <!-- Fixed arrow at top -->
-            <div class="arrow"></div>
+            <!-- Rotating arrow (rotor spins) -->
+            <div id="arrowRotor" class="arrow-rotor">
+              <div class="arrow"></div>
+            </div>
           </div>
         </div>
         <div class="actions actions-center">
