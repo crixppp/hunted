@@ -61,27 +61,27 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 .centre-cap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#e6ebf3;
   box-shadow:0 0 10px rgba(255,210,122,.6),0 0 2px #000 inset}
 
-/* 12 ticks (static, radius R = 118px so arrow sits inside dial) */
+/* 12 ticks (static, shared radius R = 126px) */
 .tick{
   position:absolute; left:50%; top:50%;
   width:3px; height:18px; background:linear-gradient(#ffd27a,#f1b84f);
   border-radius:2px; filter:drop-shadow(0 0 4px rgba(255,210,122,.6));
   transform-origin:50% 50%;
 }
-.t1 { transform: rotate(  0deg) translateY(-118px); }
-.t2 { transform: rotate( 30deg) translateY(-118px); }
-.t3 { transform: rotate( 60deg) translateY(-118px); }
-.t4 { transform: rotate( 90deg) translateY(-118px); }
-.t5 { transform: rotate(120deg) translateY(-118px); }
-.t6 { transform: rotate(150deg) translateY(-118px); }
-.t7 { transform: rotate(180deg) translateY(-118px); }
-.t8 { transform: rotate(210deg) translateY(-118px); }
-.t9 { transform: rotate(240deg) translateY(-118px); }
-.t10{ transform: rotate(270deg) translateY(-118px); }
-.t11{ transform: rotate(300deg) translateY(-118px); }
-.t12{ transform: rotate(330deg) translateY(-118px); }
+.t1 { transform: rotate(  0deg) translateY(-126px); }
+.t2 { transform: rotate( 30deg) translateY(-126px); }
+.t3 { transform: rotate( 60deg) translateY(-126px); }
+.t4 { transform: rotate( 90deg) translateY(-126px); }
+.t5 { transform: rotate(120deg) translateY(-126px); }
+.t6 { transform: rotate(150deg) translateY(-126px); }
+.t7 { transform: rotate(180deg) translateY(-126px); }
+.t8 { transform: rotate(210deg) translateY(-126px); }
+.t9 { transform: rotate(240deg) translateY(-126px); }
+.t10{ transform: rotate(270deg) translateY(-126px); }
+.t11{ transform: rotate(300deg) translateY(-126px); }
+.t12{ transform: rotate(330deg) translateY(-126px); }
 
-/* Rotating arrow (on rotor) — tip aligned to same radius R with height H=36px */
+/* Rotating arrow (on rotor) — triangle height H=36px; place its TIP on radius R */
 .arrow-rotor{
   position:absolute;left:50%;top:50%;width:0;height:0;
   transform:translate(-50%,-50%) rotate(0deg);
@@ -90,8 +90,9 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
   z-index:2;
 }
 .arrow{
-  /* top = -(R + H) = -(118 + 36) = -154px so tip radius matches ticks and arrow stays inside the disc */
-  position:absolute; left:50%; top:-154px; transform:translateX(-50%);
+  /* top = -(R + H) so the TIP sits on the same circle as the ticks */
+  position:absolute; left:50%; top:-162px; /* -(126 + 36) */
+  transform:translateX(-50%);
   width:0; height:0;
   border-left:18px solid transparent; border-right:18px solid transparent; border-bottom:36px solid var(--accent);
   filter:drop-shadow(0 8px 14px rgba(0,0,0,.5));
