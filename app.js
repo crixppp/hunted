@@ -43,31 +43,43 @@
   qs('#btnHost').addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin').addEventListener('click', () => { resetGameState(); show('join'); });
 
-  // Host spinner — ARROW rotates (always clockwise), lands on 12 notches, >= 3 full turns
-  const arrowRotor = qs('#arrowRotor');
-  let spinning = false;
-  let absoluteAngle = 0; // keep increasing (no modulo) to force clockwise interpolation
+ // Host spinner — snap start to nearest step, spin clockwise ≥3 turns, land exactly on a notch
+const arrowRotor = qs('#arrowRotor');
+let spinning = false;
+let absoluteAngle = 0; // monotonic increasing to force clockwise
 
-  qs('#btnSpin').addEventListener('click', () => {
-    if (spinning) return;
-    spinning = true;
+qs('#btnSpin').addEventListener('click', () => {
+  if (spinning) return;
+  spinning = true;
 
-    const SLOTS = 12;
-    const STEP = 360 / SLOTS;            // 30°
-    const FULL_TURNS = 3 + Math.floor(Math.random() * 4); // 3–6 full rotations
-    const slotIndex = Math.floor(Math.random() * SLOTS);  // 0..11 exact notch
+  const SLOTS = 12;
+  const STEP = 360 / SLOTS; // 30°
 
-    const target = absoluteAngle + FULL_TURNS*360 + slotIndex*STEP;
-    absoluteAngle = target; // advance our running angle so next spin is still clockwise
+  // 1) Snap current angle to the nearest notch (no visual jump)
+  const snapped = Math.round(absoluteAngle / STEP) * STEP;
+  if (snapped !== absoluteAngle) {
+    arrowRotor.style.transition = 'none';
+    arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${snapped}deg)`;
+    absoluteAngle = snapped;
+  }
 
-    arrowRotor.style.transition = 'transform 2.9s cubic-bezier(.12,.72,.12,1)'; // nice ease-out
-    arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${absoluteAngle}deg)`;
+  // 2) Compute a strictly clockwise target:
+  //    at least 3 full rotations, then an exact random notch (0..11)
+  const fullTurns = 3 + Math.floor(Math.random() * 4); // 3–6
+  const slotIndex = Math.floor(Math.random() * SLOTS); // 0..11
+  const extraSteps = fullTurns * SLOTS + slotIndex;    // integer number of 30° steps
+  const targetAngle = absoluteAngle + extraSteps * STEP;
 
-    setTimeout(() => {
-      arrowRotor.style.transition = 'none';
-      spinning = false;
-    }, 3000);
-  });
+  // 3) Animate to target
+  arrowRotor.style.transition = 'transform 2.9s cubic-bezier(.12,.72,.12,1)';
+  arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${targetAngle}deg)`;
+  absoluteAngle = targetAngle;
+
+  setTimeout(() => {
+    arrowRotor.style.transition = 'none';
+    spinning = false;
+  }, 3000);
+});
   qs('#btnHostBack').addEventListener('click', () => show('home'));
 
   // Join: slot machine (one roll per game; resets on Home)
