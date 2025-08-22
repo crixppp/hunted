@@ -13,14 +13,15 @@ body.dark{
 
 /* Header */
 .app-header{
+  position:relative;z-index:1;
   display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #1e2330;
   background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0))
 }
 .brand{display:flex;align-items:center;gap:12px;border:none;background:none;padding:0;cursor:pointer}
 .logo{height:34px;width:auto;display:block}
 
-/* Hide header logo when Home screen is active */
-body:has(#screen-home.active) .app-header .brand{display:none}
+/* Hide header logo when Home screen is active (JS toggles .home-active) */
+body.home-active .app-header .brand{display:none}
 
 /* Layout */
 .container{max-width:880px;margin:0 auto;padding:18px}
@@ -80,7 +81,6 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 .t7{transform:translate(-1px,-132px) rotate(180deg)} .t8{transform:translate(-1px,-132px) rotate(210deg)}
 .t9{transform:translate(-1px,-132px) rotate(240deg)} .t10{transform:translate(-1px,-132px) rotate(270deg)}
 .t11{transform:translate(-1px,-132px) rotate(300deg)} .t12{transform:translate(-1px,-132px) rotate(330deg)}
-
 .spinner .arrow{
   position:absolute;top:-14px;left:50%;transform:translateX(-50%);
   width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:34px solid var(--accent);
