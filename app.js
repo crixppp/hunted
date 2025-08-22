@@ -1,4 +1,4 @@
-// Hunted Web App — ensure beeps only on timer screen; cancel on exit/new game
+// Hunted Web App — spinner dial rotation fixed; test beep on Join & Timer; stop beeps when leaving timer
 (() => {
   const qs = (s, p=document) => p.querySelector(s);
   const qsa = (s, p=document) => [...p.querySelectorAll(s)];
@@ -11,12 +11,12 @@
 
   // ---------- Navigation ----------
   function show(name) {
+    const leavingTimer = screens.timer.classList.contains('active') && name !== 'timer';
+    if (leavingTimer) endGame(); // stop any running game when leaving timer
+
     Object.values(screens).forEach(sc => sc.classList.remove('active'));
     screens[name].classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    const leavingTimer = !screens.timer.classList.contains('active') || name !== 'timer';
-    if (leavingTimer) endGame(); // stop any running game when leaving timer
 
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
@@ -70,6 +70,7 @@
     spinning = true;
     const delta = randomSpinAngle();
     spinAngle += delta;
+    // rotate the FACE only
     spinnerFace.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
     spinnerFace.style.transform = `rotate(${spinAngle}deg)`;
     setTimeout(() => { spinnerFace.style.transition = 'none'; spinning = false; }, 2900);
@@ -144,8 +145,7 @@
     if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
   }
   function playBeep(durationMs=300, frequency=1200) {
-    // Beep only if game is active
-    if (!isGameActive()) return;
+    // Beep only if game is active (for timer) or if explicitly testing
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
     osc.type='square'; osc.frequency.value=frequency;
@@ -162,10 +162,13 @@
   qs('#btnJoinTestBeep')?.addEventListener('click', async () => {
     await ensureAudio(); playBeep(200, 1000);
   });
+  // Test beep on Timer (before Start)
+  qs('#btnTimerTestBeep')?.addEventListener('click', async () => {
+    await ensureAudio(); playBeep(200, 1000);
+  });
 
   // ---------- Timer & Game lifecycle ----------
   const domCountdown = qs('#countdown');
-  const btnEnableAudio = qs('#btnEnableAudio');
   const btnStart = qs('#btnStart');
 
   let timerRunning = false;
@@ -175,9 +178,7 @@
   let startEpochMs = 0;
   let rafId = null;
   let wakeLock = null;
-
-  // A token so only the current game can tick/beep
-  let activeGameId = null;
+  let activeGameId = null; // token so only the current game can tick/beep
 
   const fmt = (sec) => {
     const m = Math.floor(sec / 60), s = sec % 60;
@@ -190,32 +191,31 @@
   }
   function scheduleNext(nowMs){ currentIntervalSeconds = adaptiveInterval(nowMs); nextAt = nowMs + currentIntervalSeconds*1000; }
 
-  function isGameActive() {
-    return document.body.classList.contains('playing') && timerRunning && activeGameId !== null;
+  function isGameActive(localId) {
+    return document.body.classList.contains('playing') && timerRunning && activeGameId === localId;
   }
 
-  function updateCountdown(localGameId){
-    if (!isGameActive() || localGameId !== activeGameId) return; // stopped or replaced
+  function updateCountdown(localId){
+    if (!isGameActive(localId)) return; // stopped or replaced
     const now = performance.now();
     const msLeft = Math.max(0, nextAt - now);
     const secLeft = Math.ceil(msLeft / 1000);
     domCountdown.textContent = fmt(secLeft);
     if (secLeft <= 10) domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
     if (msLeft <= 0) {
-      playBeep();
+      // Only beep if still on timer
+      if (isGameActive(localId)) playBeep();
       scheduleNext(performance.now());
     }
-    rafId = requestAnimationFrame(() => updateCountdown(localGameId));
+    rafId = requestAnimationFrame(() => updateCountdown(localId));
   }
 
   async function requestWakeLock(){
     try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{wakeLock=null;}); } }catch{}
   }
-
   function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch{} }
 
   function startGame() {
-    // Create a unique id for this run
     activeGameId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     timerRunning = true;
     startEpochMs = performance.now();
@@ -226,7 +226,6 @@
   }
 
   function endGame() {
-    // Stop any current game and ensure no more beeps
     timerRunning = false;
     activeGameId = null;
     if (rafId) cancelAnimationFrame(rafId);
@@ -234,7 +233,7 @@
     domCountdown.classList.remove('red');
   }
 
-  // Visibility: if the tab/app goes to background, stop the game
+  // If the tab goes to background, stop the game
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') endGame();
   });
@@ -247,8 +246,7 @@
     show('timer');
   });
 
-  // Pre-start
-  btnEnableAudio.addEventListener('click', async ()=>{ await ensureAudio(); playBeep(120,1000); btnEnableAudio.disabled=true; });
+  // Start the game
   btnStart.addEventListener('click', async ()=>{
     await ensureAudio();
     document.body.classList.add('playing');
