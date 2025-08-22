@@ -71,17 +71,26 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 }
 /* 12 ticks on the dial (static) */
 .tick{
-  position:absolute;left:50%;top:50%;width:3px;height:24px;
+  position:absolute;
+  left:50%; top:50%;
+  width:3px; height:16px; /* shorter so they sit inside rim */
   background:linear-gradient(#ffd27a,#f1b84f);
-  transform-origin:center -128px; border-radius:2px;
-  filter:drop-shadow(0 0 6px rgba(255,210,122,.7));
+  transform-origin:center -110px;  /* was -128px, pulls them closer in */
+  border-radius:2px;
+  filter:drop-shadow(0 0 4px rgba(255,210,122,.7));
 }
-.t1{transform:translate(-1.5px,-128px) rotate(0deg)} .t2{transform:translate(-1.5px,-128px) rotate(30deg)}
-.t3{transform:translate(-1.5px,-128px) rotate(60deg)} .t4{transform:translate(-1.5px,-128px) rotate(90deg)}
-.t5{transform:translate(-1.5px,-128px) rotate(120deg)} .t6{transform:translate(-1.5px,-128px) rotate(150deg)}
-.t7{transform:translate(-1.5px,-128px) rotate(180deg)} .t8{transform:translate(-1.5px,-128px) rotate(210deg)}
-.t9{transform:translate(-1.5px,-128px) rotate(240deg)} .t10{transform:translate(-1.5px,-128px) rotate(270deg)}
-.t11{transform:translate(-1.5px,-128px) rotate(300deg)} .t12{transform:translate(-1.5px,-128px) rotate(330deg)}
+.t1{transform:translate(-1.5px,-110px) rotate(0deg)}
+.t2{transform:translate(-1.5px,-110px) rotate(30deg)}
+.t3{transform:translate(-1.5px,-110px) rotate(60deg)}
+.t4{transform:translate(-1.5px,-110px) rotate(90deg)}
+.t5{transform:translate(-1.5px,-110px) rotate(120deg)}
+.t6{transform:translate(-1.5px,-110px) rotate(150deg)}
+.t7{transform:translate(-1.5px,-110px) rotate(180deg)}
+.t8{transform:translate(-1.5px,-110px) rotate(210deg)}
+.t9{transform:translate(-1.5px,-110px) rotate(240deg)}
+.t10{transform:translate(-1.5px,-110px) rotate(270deg)}
+.t11{transform:translate(-1.5px,-110px) rotate(300deg)}
+.t12{transform:translate(-1.5px,-110px) rotate(330deg)}
 
 /* Arrow ROTOR (centred) — we rotate this */
 .arrow-rotor{
