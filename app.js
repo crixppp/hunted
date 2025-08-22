@@ -1,4 +1,4 @@
-// Hunted Web App — arrow rotates (wheel static); test beeps; stop beeps when leaving timer; adaptive interval
+// Hunted Web App — arrow rotates & snaps to notches; beeps only on timer; test beeps; adaptive interval
 (() => {
   const qs = (s, p=document) => p.querySelector(s);
   const qsa = (s, p=document) => [...p.querySelectorAll(s)];
@@ -9,7 +9,6 @@
     timer: qs('#screen-timer')
   };
 
-  // ---------- Navigation ----------
   function show(name) {
     const leavingTimer = screens.timer.classList.contains('active') && name !== 'timer';
     if (leavingTimer) endGame();
@@ -23,83 +22,60 @@
   }
   document.body.classList.add('home-active');
 
-  // Header logo → Home
+  // Header logo
   qs('#logoBtn').addEventListener('click', () => show('home'));
 
-  // ---------- Quick Rules modal ----------
+  // Quick Rules modal
   const modal = qs('#modal');
-  qs('#btnQuickRules').addEventListener('click', () => {
-    modal.classList.add('show'); modal.setAttribute('aria-hidden', 'false');
-  });
-  qsa('[data-close]').forEach(el => el.addEventListener('click', () => {
-    modal.classList.remove('show'); modal.setAttribute('aria-hidden', 'true');
-  }));
-  window.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && modal.classList.contains('show')) {
-      modal.classList.remove('show'); modal.setAttribute('aria-hidden', 'true');
-    }
-  });
+  qs('#btnQuickRules').addEventListener('click', () => { modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); });
+  qsa('[data-close]').forEach(el => el.addEventListener('click', () => { modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); }));
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('show')) { modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); } });
 
-  // ---------- New game reset ----------
+  // New game reset
   function resetGameState() {
     localStorage.removeItem('assignedSeconds_final');
     localStorage.removeItem('rolledFinal');
-    assignedSeconds = null;
-    rolledFinal = false;
+    assignedSeconds = null; rolledFinal = false;
     if (slotMin) slotMin.textContent = '0';
     if (slotSecT) slotSecT.textContent = '0';
     if (slotSecO) slotSecO.textContent = '0';
     if (btnSlotSpin) btnSlotSpin.disabled = false;
     if (btnSlotContinue) btnSlotContinue.disabled = true;
   }
-
-  // Home buttons (start a NEW game flow)
   qs('#btnHost').addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin').addEventListener('click', () => { resetGameState(); show('join'); });
 
-// ---------- Host spinner (ARROW ROTATES; dial static) ----------
-const arrowRotor = qs('#arrowRotor');
-let spinning = false, spinAngle = 0;
+  // Host spinner — ARROW rotates and snaps to 12 notches
+  const arrowRotor = qs('#arrowRotor');
+  let spinning = false, spinAngle = 0;
+  qs('#btnSpin').addEventListener('click', () => {
+    if (spinning) return;
+    spinning = true;
 
-qs('#btnSpin').addEventListener('click', () => {
-  if (spinning) return;
-  spinning = true;
+    const SLOTS = 12;                           // 12 notches
+    const FULL_TURNS = 4 + Math.floor(Math.random()*4); // 4–7 full spins
+    const slotIndex = Math.floor(Math.random() * SLOTS); // 0..11
+    const step = 360 / SLOTS;                   // 30°
+    const targetDelta = FULL_TURNS * 360 + slotIndex * step;
 
-  const SLOTS = 12;                 // 12 notches → every 30°
-  const FULL_TURNS = 4 + Math.floor(Math.random() * 4);   // 4–7 full spins
-  const slotIndex = Math.floor(Math.random() * SLOTS);    // 0..11
+    spinAngle += targetDelta;
+    arrowRotor.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
+    arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${spinAngle}deg)`;
 
-  const step = 360 / SLOTS;         // 30°
-  const targetDelta = FULL_TURNS * 360 + slotIndex * step;
+    setTimeout(() => { arrowRotor.style.transition = 'none'; spinAngle = spinAngle % 360; spinning = false; }, 2900);
+  });
+  qs('#btnHostBack').addEventListener('click', () => show('home'));
 
-  spinAngle += targetDelta;         // accumulate so successive spins continue
-  arrowRotor.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
-  arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${spinAngle}deg)`;
+  // Join: slot machine (one roll per game; resets on Home)
+  const slotMin = qs('#slotMin'), slotSecT = qs('#slotSecT'), slotSecO = qs('#slotSecO');
+  const btnSlotSpin = qs('#btnSlotSpin'), btnSlotContinue = qs('#btnSlotContinue');
 
-  setTimeout(() => {
-    arrowRotor.style.transition = 'none';
-    // keep angle tidy (avoid huge numbers)
-    spinAngle = spinAngle % 360;
-    spinning = false;
-  }, 2900);
-});
-
-  // ---------- Join: one-time roll per game, reset on Home ----------
-  const slotMin = qs('#slotMin');
-  const slotSecT = qs('#slotSecT');
-  const slotSecO = qs('#slotSecO');
-  const btnSlotSpin = qs('#btnSlotSpin');
-  const btnSlotContinue = qs('#btnSlotContinue');
-
-  let assignedSeconds = null;
-  let rolledFinal = false;
+  let assignedSeconds = null, rolledFinal = false;
 
   function cycle(el, values, durationMs, targetValue, fps=30) {
     return new Promise(resolve => {
-      const interval = 1000 / fps;
-      const end = Date.now() + durationMs;
-      const len = values.length;
-      let i = Math.floor(Math.random() * len);
+      const interval = 1000 / fps, end = Date.now() + durationMs, len = values.length;
+      let i = Math.floor(Math.random()*len);
       (function tick(){
         if (Date.now() >= end) { el.textContent = String(targetValue); resolve(); return; }
         el.textContent = String(values[i % len]); i++; setTimeout(tick, interval);
@@ -113,9 +89,7 @@ qs('#btnSpin').addEventListener('click', () => {
     btnSlotSpin.disabled = true;
 
     assignedSeconds = pickRandom0to120();
-    const m = Math.floor(assignedSeconds / 60);
-    const s = assignedSeconds % 60;
-    const sT = Math.floor(s / 10), sO = s % 10;
+    const m = Math.floor(assignedSeconds/60), s = assignedSeconds % 60, sT = Math.floor(s/10), sO = s % 10;
 
     await Promise.all([
       cycle(slotMin, [0,1,2], 1200 + Math.random()*500, m),
@@ -125,14 +99,13 @@ qs('#btnSpin').addEventListener('click', () => {
 
     rolledFinal = true;
     btnSlotContinue.disabled = false;
-
     localStorage.setItem('assignedSeconds_final', String(assignedSeconds));
     localStorage.setItem('rolledFinal', '1');
   });
 
-  qs('#btnJoinBack').addEventListener('click', () => show('home'));
+  qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
 
-  // Restore within the same game session
+  // Restore within same game session
   const storedFinal = Number(localStorage.getItem('assignedSeconds_final'));
   const storedLock  = localStorage.getItem('rolledFinal') === '1';
   if (storedLock && Number.isFinite(storedFinal)) {
@@ -144,14 +117,11 @@ qs('#btnSpin').addEventListener('click', () => {
     btnSlotSpin.disabled = true; btnSlotContinue.disabled = false;
   }
 
-  // ---------- Audio / Beep ----------
+  // Audio / beeps
   let audioCtx = null;
-  async function ensureAudio() {
-    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
-    if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-  }
-  function playBeep(durationMs=300, frequency=1200) {
-    if (!audioCtx) return;
+  async function ensureAudio(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch{} } if(audioCtx && audioCtx.state==='suspended') await audioCtx.resume(); }
+  function playBeep(durationMs=300, frequency=1200){
+    if(!audioCtx) return;
     const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
     osc.type='square'; osc.frequency.value=frequency;
     osc.connect(gain); gain.connect(audioCtx.destination);
@@ -162,59 +132,30 @@ qs('#btnSpin').addEventListener('click', () => {
     osc.start(t); osc.stop(t+durationMs/1000);
     if (navigator.vibrate) navigator.vibrate(50);
   }
-
-  // Test beeps
   qs('#btnJoinTestBeep')?.addEventListener('click', async () => { await ensureAudio(); playBeep(200, 1000); });
   qs('#btnTimerTestBeep')?.addEventListener('click', async () => { await ensureAudio(); playBeep(200, 1000); });
 
-  // ---------- Timer & Game lifecycle ----------
-  const domCountdown = qs('#countdown');
-  const btnStart = qs('#btnStart');
+  // Timer & game lifecycle (beeps only while on timer)
+  const domCountdown = qs('#countdown'), btnStart = qs('#btnStart');
+  let timerRunning = false, nextAt = 0, baseIntervalSeconds = 30, currentIntervalSeconds = 30, startEpochMs = 0, rafId = null, wakeLock = null, activeGameId = null;
 
-  let timerRunning = false;
-  let nextAt = 0;
-  let baseIntervalSeconds = 30;
-  let currentIntervalSeconds = 30;
-  let startEpochMs = 0;
-  let rafId = null;
-  let wakeLock = null;
-  let activeGameId = null; // token so only the current game can tick/beep
-
-  const fmt = (sec) => {
-    const m = Math.floor(sec / 60), s = sec % 60;
-    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  };
-
-  function adaptiveInterval(nowMs){
-    const minutes = Math.floor((nowMs - startEpochMs) / 60000);
-    return Math.max(20, baseIntervalSeconds - 2*minutes);
-  }
+  const fmt = (sec) => { const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; };
+  function adaptiveInterval(nowMs){ const minutes = Math.floor((nowMs - startEpochMs)/60000); return Math.max(20, baseIntervalSeconds - 2*minutes); }
   function scheduleNext(nowMs){ currentIntervalSeconds = adaptiveInterval(nowMs); nextAt = nowMs + currentIntervalSeconds*1000; }
-
-  function isGameActive(localId) {
-    return document.body.classList.contains('playing') && timerRunning && activeGameId === localId;
-  }
+  function isGameActive(localId){ return document.body.classList.contains('playing') && timerRunning && activeGameId === localId; }
 
   function updateCountdown(localId){
-    if (!isGameActive(localId)) return; // stopped or replaced
-    const now = performance.now();
-    const msLeft = Math.max(0, nextAt - now);
-    const secLeft = Math.ceil(msLeft / 1000);
+    if (!isGameActive(localId)) return;
+    const now = performance.now(), msLeft = Math.max(0, nextAt - now), secLeft = Math.ceil(msLeft/1000);
     domCountdown.textContent = fmt(secLeft);
     if (secLeft <= 10) domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
-    if (msLeft <= 0) {
-      if (isGameActive(localId)) playBeep();
-      scheduleNext(performance.now());
-    }
+    if (msLeft <= 0) { if (isGameActive(localId)) playBeep(); scheduleNext(performance.now()); }
     rafId = requestAnimationFrame(() => updateCountdown(localId));
   }
-
-  async function requestWakeLock(){
-    try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{wakeLock=null;}); } }catch{}
-  }
+  async function requestWakeLock(){ try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{wakeLock=null;}); } }catch{} }
   function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch{} }
 
-  function startGame() {
+  function startGame(){
     activeGameId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     timerRunning = true;
     startEpochMs = performance.now();
@@ -223,21 +164,13 @@ qs('#btnSpin').addEventListener('click', () => {
     requestWakeLock();
     updateCountdown(activeGameId);
   }
-
-  function endGame() {
-    timerRunning = false;
-    activeGameId = null;
+  function endGame(){
+    timerRunning = false; activeGameId = null;
     if (rafId) cancelAnimationFrame(rafId);
-    releaseWakeLock();
-    domCountdown.classList.remove('red');
+    releaseWakeLock(); domCountdown.classList.remove('red');
   }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') endGame(); });
 
-  // If the tab goes to background, stop the game
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') endGame();
-  });
-
-  // Join -> Timer
   qs('#btnSlotContinue').addEventListener('click', () => {
     if (!rolledFinal || assignedSeconds == null) return;
     baseIntervalSeconds = assignedSeconds;
@@ -245,7 +178,6 @@ qs('#btnSpin').addEventListener('click', () => {
     show('timer');
   });
 
-  // Start the game
   btnStart.addEventListener('click', async ()=>{
     await ensureAudio();
     document.body.classList.add('playing');
