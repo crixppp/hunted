@@ -7,37 +7,23 @@
   <meta name="theme-color" content="#0f1115"/>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="dark">
   <header class="app-header">
-    <div class="brand">
+    <button id="logoBtn" class="brand" aria-label="Go home">
       <img src="logo.png" alt="Hunted logo" class="logo" />
-      <span class="sr-only">Hunted</span>
-    </div>
-    <div class="header-actions">
-      <button id="keepAwake" class="secondary" aria-pressed="false">Keep screen awake</button>
-      <button id="themeToggle" class="ghost" aria-label="Toggle theme">☾</button>
-    </div>
+    </button>
   </header>
 
   <main class="container">
     <!-- Home Screen -->
     <section id="screen-home" class="screen active">
       <div class="card hero">
-        <h2>Get Started</h2>
-        <p>Select a role below. Host the spinner to pick the Hunter; players join to get their own timed beeps.</p>
+        <h1>Hunted</h1>
         <div class="actions">
           <button id="btnHost" class="primary">Host New Game</button>
           <button id="btnJoin" class="secondary">Join Game</button>
           <button id="btnQuickRules" class="ghost">Quick Rules</button>
         </div>
-        <details class="tips">
-          <summary>Quick tips</summary>
-          <ul>
-            <li>Set volume to maximum and take silent mode off.</li>
-            <li>Tap <strong>Enable sound</strong> once to allow beeps on iPhone/Android.</li>
-            <li>Final 10 seconds turn red each cycle.</li>
-          </ul>
-        </details>
       </div>
     </section>
 
@@ -45,18 +31,22 @@
     <section id="screen-host" class="screen">
       <div class="card">
         <h2>Choose the Hunter</h2>
-        <p>Place the phone at the centre of the circle. Tap <em>Spin</em> and the arrow will pick the Hunter.</p>
         <div class="spinner-wrap">
           <div id="spinner" class="spinner">
+            <div class="spinner-face">
+              <!-- tick marks -->
+              <div class="tick t1"></div><div class="tick t2"></div><div class="tick t3"></div><div class="tick t4"></div>
+              <div class="tick t5"></div><div class="tick t6"></div><div class="tick t7"></div><div class="tick t8"></div>
+              <div class="tick t9"></div><div class="tick t10"></div><div class="tick t11"></div><div class="tick t12"></div>
+              <div class="centre-cap"></div>
+            </div>
             <div class="arrow"></div>
-            <div class="dial"></div>
           </div>
         </div>
         <div class="actions">
           <button id="btnSpin" class="primary">Spin</button>
           <button id="btnHostBack" class="ghost">Back</button>
         </div>
-        <p class="muted small">Pro tip: tap <strong>Spin</strong> again if you need a re-roll.</p>
       </div>
     </section>
 
@@ -64,7 +54,7 @@
     <section id="screen-join" class="screen">
       <div class="card">
         <h2>Set Your Interval</h2>
-        <p>Tap <em>Spin</em> to get a random interval between <strong>0:00</strong> and <strong>2:00</strong>.</p>
+        <p class="muted small">One roll only. Your interval cannot be changed.</p>
 
         <div class="slot-wrap">
           <div class="slot">
@@ -85,35 +75,16 @@
           <button id="btnSlotContinue" class="secondary" disabled>Continue</button>
           <button id="btnJoinBack" class="ghost">Back</button>
         </div>
-
-        <p class="muted small">Note: If you roll <strong>2:00</strong>, seconds are fixed to <strong>00</strong> by design.</p>
       </div>
     </section>
 
     <!-- Timer Screen -->
     <section id="screen-timer" class="screen">
-      <div class="card">
-        <h2>Countdown</h2>
+      <div class="card timer-card">
         <div id="countdown" class="countdown">00:30</div>
-
-        <div class="actions">
+        <div class="actions prestart">
           <button id="btnEnableAudio" class="secondary">Enable sound</button>
           <button id="btnStart" class="primary">Start</button>
-          <button id="btnPause" class="secondary" disabled>Pause</button>
-          <button id="btnReset" class="ghost">Reset</button>
-        </div>
-
-        <div class="actions">
-          <button id="btnTestBeep" class="ghost">Test beep</button>
-          <button id="btnChangeInterval" class="ghost">Change interval</button>
-        </div>
-
-        <div id="awakeStatus" class="hint muted small" style="margin-top:8px;">Screen wake: not active</div>
-
-        <div class="hints">
-          <div class="hint">🔊 Set your volume to maximum and take silent mode off.</div>
-          <div class="hint">📱 Keep the screen awake with the button in the header.</div>
-          <div class="hint">⏱ Final 10 seconds show in red.</div>
         </div>
       </div>
     </section>
@@ -132,11 +103,10 @@
           <li>4+ players, confined space, walking only.</li>
           <li>Host: <em>Host New Game → Spin</em> to pick the Hunter.</li>
           <li>Prey: <em>Join Game → Spin</em> to get a random 0:00–2:00 interval.</li>
-          <li>Enable sound, set volume to max, then <em>Start</em>.</li>
+          <li>Tap <em>Enable sound</em>, then <em>Start</em>. Your roll is final.</li>
           <li>Final 10 seconds are red; phone beeps at 0 and repeats.</li>
           <li>Hunter blindfolds and counts to 30; then hunts.</li>
-          <li>Prey eliminated if touched, if they touch the Hunter, or if they run/speak.</li>
-          <li>Eliminated players wait in the out-of-play area.</li>
+          <li>Prey out if touched, if they touch the Hunter, or if they run/speak.</li>
         </ol>
       </div>
       <footer class="modal-footer">
@@ -146,7 +116,7 @@
   </div>
 
   <footer class="app-footer">
-    <small>created by Sam Gilliot • Works on iPhone & Android</small>
+    <small>created by Sam Gilliot</small>
   </footer>
 
   <script src="app.js"></script>
