@@ -192,7 +192,7 @@
 
 function adaptiveInterval(nowMs){
   const minutes = Math.floor((nowMs - startEpochMs) / 60000);
-  return Math.max(3, baseIntervalSeconds - 2*minutes);
+  return Math.max(3, baseIntervalSeconds - 5*minutes);
 }
   function scheduleNext(nowMs){ currentIntervalSeconds = adaptiveInterval(nowMs); nextAt = nowMs + currentIntervalSeconds*1000; }
 
