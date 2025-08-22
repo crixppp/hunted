@@ -18,7 +18,6 @@ body.dark{
 }
 .brand{display:flex;align-items:center;gap:12px;border:none;background:none;padding:0;cursor:pointer}
 .logo{height:34px;width:auto;display:block}
-/* JS puts .home-active on body to hide header logo on Home */
 body.home-active .app-header .brand{display:none}
 
 /* Layout */
@@ -47,41 +46,48 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 .muted{color:var(--muted)} .small{font-size:12px}
 .screen{display:none} .screen.active{display:block}
 
-/* Spinner (Host) — only dial spins, arrow fixed, no clipping */
+/* Spinner (Host) — only dial spins, arrow fixed, no clipping) */
 .spinner-wrap{display:flex;justify-content:center;margin:18px 0}
 .spinner{
   position:relative;width:320px;height:320px;border-radius:50%;
-  background:radial-gradient(130px 130px at 50% 50%,#1e2533,#121722);
-  border:10px solid #0e121a;box-shadow:inset 0 0 0 3px #2a3347,0 18px 48px rgba(0,0,0,.5);
+  background:radial-gradient(130px 130px at 50% 50%,#1c2230,#0f141e);
+  border:10px solid #0e121a;box-shadow:inset 0 0 0 3px #2a3347,0 24px 60px rgba(0,0,0,.55);
   overflow:visible;
 }
 .spinner-face{
   position:absolute;inset:16px;border-radius:50%;
-  background:conic-gradient(from 0deg,#1b2230,#1f2840 40%,#1b2230 80%);
-  box-shadow:inset 0 0 28px rgba(255,255,255,.05);
-  transform:rotate(0deg); /* will be animated by JS */
+  background:radial-gradient(140px 140px at 50% 40%, rgba(255,255,255,.04), rgba(255,255,255,0)),
+             conic-gradient(from 0deg,#1b2230,#1f2840 40%,#1b2230 80%);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.5);
+  transform:rotate(0deg); /* animated by JS */
+}
+.ring{
+  position:absolute;inset:8px;border-radius:50%;
+  box-shadow:inset 0 0 0 2px #263145, inset 0 0 0 8px rgba(0,0,0,.3);
 }
 .centre-cap{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:18px;height:18px;border-radius:50%;background:#e6ebf3;
-  box-shadow:0 0 12px rgba(255,210,122,.6),0 0 2px #000 inset
+  box-shadow:0 0 10px rgba(255,210,122,.6),0 0 2px #000 inset
 }
-/* 12 ticks (part of the face, so they rotate) */
+/* 12 ticks */
 .tick{
-  position:absolute;left:50%;top:50%;width:2px;height:22px;background:var(--accent);
-  transform-origin:center -132px;filter:drop-shadow(0 0 6px rgba(255,210,122,.8))
+  position:absolute;left:50%;top:50%;width:3px;height:24px;
+  background:linear-gradient(#ffd27a,#f1b84f);
+  transform-origin:center -128px; border-radius:2px;
+  filter:drop-shadow(0 0 6px rgba(255,210,122,.7));
 }
-.t1{transform:translate(-1px,-132px) rotate(0deg)} .t2{transform:translate(-1px,-132px) rotate(30deg)}
-.t3{transform:translate(-1px,-132px) rotate(60deg)} .t4{transform:translate(-1px,-132px) rotate(90deg)}
-.t5{transform:translate(-1px,-132px) rotate(120deg)} .t6{transform:translate(-1px,-132px) rotate(150deg)}
-.t7{transform:translate(-1px,-132px) rotate(180deg)} .t8{transform:translate(-1px,-132px) rotate(210deg)}
-.t9{transform:translate(-1px,-132px) rotate(240deg)} .t10{transform:translate(-1px,-132px) rotate(270deg)}
-.t11{transform:translate(-1px,-132px) rotate(300deg)} .t12{transform:translate(-1px,-132px) rotate(330deg)}
+.t1{transform:translate(-1.5px,-128px) rotate(0deg)} .t2{transform:translate(-1.5px,-128px) rotate(30deg)}
+.t3{transform:translate(-1.5px,-128px) rotate(60deg)} .t4{transform:translate(-1.5px,-128px) rotate(90deg)}
+.t5{transform:translate(-1.5px,-128px) rotate(120deg)} .t6{transform:translate(-1.5px,-128px) rotate(150deg)}
+.t7{transform:translate(-1.5px,-128px) rotate(180deg)} .t8{transform:translate(-1.5px,-128px) rotate(210deg)}
+.t9{transform:translate(-1.5px,-128px) rotate(240deg)} .t10{transform:translate(-1.5px,-128px) rotate(270deg)}
+.t11{transform:translate(-1.5px,-128px) rotate(300deg)} .t12{transform:translate(-1.5px,-128px) rotate(330deg)}
 /* Fixed arrow */
 .spinner .arrow{
-  position:absolute;top:-14px;left:50%;transform:translateX(-50%);
-  width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-bottom:34px solid var(--accent);
-  filter:drop-shadow(0 6px 12px rgba(0,0,0,.45))
+  position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:36px solid var(--accent);
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))
 }
 
 /* Slots */
