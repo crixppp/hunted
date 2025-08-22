@@ -46,7 +46,7 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 .muted{color:var(--muted)} .small{font-size:12px}
 .screen{display:none} .screen.active{display:block}
 
-/* Spinner (Host) — only dial spins, arrow fixed, no clipping) */
+/* Spinner (Host) — static dial + rotating arrow) */
 .spinner-wrap{display:flex;justify-content:center;margin:18px 0}
 .spinner{
   position:relative;width:320px;height:320px;border-radius:50%;
@@ -59,7 +59,6 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
   background:radial-gradient(140px 140px at 50% 40%, rgba(255,255,255,.04), rgba(255,255,255,0)),
              conic-gradient(from 0deg,#1b2230,#1f2840 40%,#1b2230 80%);
   box-shadow:inset 0 0 40px rgba(0,0,0,.5);
-  transform:rotate(0deg); /* animated by JS */
 }
 .ring{
   position:absolute;inset:8px;border-radius:50%;
@@ -70,7 +69,7 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
   width:18px;height:18px;border-radius:50%;background:#e6ebf3;
   box-shadow:0 0 10px rgba(255,210,122,.6),0 0 2px #000 inset
 }
-/* 12 ticks */
+/* 12 ticks on the dial (static) */
 .tick{
   position:absolute;left:50%;top:50%;width:3px;height:24px;
   background:linear-gradient(#ffd27a,#f1b84f);
@@ -83,11 +82,19 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 .t7{transform:translate(-1.5px,-128px) rotate(180deg)} .t8{transform:translate(-1.5px,-128px) rotate(210deg)}
 .t9{transform:translate(-1.5px,-128px) rotate(240deg)} .t10{transform:translate(-1.5px,-128px) rotate(270deg)}
 .t11{transform:translate(-1.5px,-128px) rotate(300deg)} .t12{transform:translate(-1.5px,-128px) rotate(330deg)}
-/* Fixed arrow */
-.spinner .arrow{
-  position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+
+/* Arrow ROTOR (centred) — we rotate this */
+.arrow-rotor{
+  position:absolute;left:50%;top:50%;width:0;height:0;transform:translate(-50%,-50%) rotate(0deg);
+  transform-origin:50% 50%;
+  will-change: transform;
+}
+/* The arrow lives above the rim; since the rotor rotates around centre,
+   we position the triangle "north" of the centre. */
+.arrow{
+  position:absolute;left:50%;top:-152px;transform:translateX(-50%);
   width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:36px solid var(--accent);
-  filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.5));
 }
 
 /* Slots */
