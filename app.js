@@ -1,4 +1,4 @@
-// Hunted Web App — spinner dial rotation fixed; test beep on Join & Timer; stop beeps when leaving timer
+// Hunted Web App — arrow rotates (wheel static); test beeps; stop beeps when leaving timer; adaptive interval
 (() => {
   const qs = (s, p=document) => p.querySelector(s);
   const qsa = (s, p=document) => [...p.querySelectorAll(s)];
@@ -12,7 +12,7 @@
   // ---------- Navigation ----------
   function show(name) {
     const leavingTimer = screens.timer.classList.contains('active') && name !== 'timer';
-    if (leavingTimer) endGame(); // stop any running game when leaving timer
+    if (leavingTimer) endGame();
 
     Object.values(screens).forEach(sc => sc.classList.remove('active'));
     screens[name].classList.add('active');
@@ -57,8 +57,8 @@
   qs('#btnHost').addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin').addEventListener('click', () => { resetGameState(); show('join'); });
 
-  // ---------- Host spinner (dial spins; arrow fixed) ----------
-  const spinnerFace = qs('#spinnerFace');
+  // ---------- Host spinner (ARROW ROTATES; dial static) ----------
+  const arrowRotor = qs('#arrowRotor');
   let spinning = false, spinAngle = 0;
   function randomSpinAngle() {
     const fullTurns = 4 + Math.floor(Math.random() * 4); // 4–7 turns
@@ -70,10 +70,9 @@
     spinning = true;
     const delta = randomSpinAngle();
     spinAngle += delta;
-    // rotate the FACE only
-    spinnerFace.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
-    spinnerFace.style.transform = `rotate(${spinAngle}deg)`;
-    setTimeout(() => { spinnerFace.style.transition = 'none'; spinning = false; }, 2900);
+    arrowRotor.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
+    arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${spinAngle}deg)`;
+    setTimeout(() => { arrowRotor.style.transition = 'none'; spinning = false; }, 2900);
   });
   qs('#btnHostBack').addEventListener('click', () => show('home'));
 
@@ -83,7 +82,6 @@
   const slotSecO = qs('#slotSecO');
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
-  const btnJoinBack = qs('#btnJoinBack');
 
   let assignedSeconds = null;
   let rolledFinal = false;
@@ -124,7 +122,7 @@
     localStorage.setItem('rolledFinal', '1');
   });
 
-  btnJoinBack.addEventListener('click', () => show('home'));
+  qs('#btnJoinBack').addEventListener('click', () => show('home'));
 
   // Restore within the same game session
   const storedFinal = Number(localStorage.getItem('assignedSeconds_final'));
@@ -145,7 +143,6 @@
     if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
   }
   function playBeep(durationMs=300, frequency=1200) {
-    // Beep only if game is active (for timer) or if explicitly testing
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
     osc.type='square'; osc.frequency.value=frequency;
@@ -158,14 +155,9 @@
     if (navigator.vibrate) navigator.vibrate(50);
   }
 
-  // Test beep on Join
-  qs('#btnJoinTestBeep')?.addEventListener('click', async () => {
-    await ensureAudio(); playBeep(200, 1000);
-  });
-  // Test beep on Timer (before Start)
-  qs('#btnTimerTestBeep')?.addEventListener('click', async () => {
-    await ensureAudio(); playBeep(200, 1000);
-  });
+  // Test beeps
+  qs('#btnJoinTestBeep')?.addEventListener('click', async () => { await ensureAudio(); playBeep(200, 1000); });
+  qs('#btnTimerTestBeep')?.addEventListener('click', async () => { await ensureAudio(); playBeep(200, 1000); });
 
   // ---------- Timer & Game lifecycle ----------
   const domCountdown = qs('#countdown');
@@ -203,7 +195,6 @@
     domCountdown.textContent = fmt(secLeft);
     if (secLeft <= 10) domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
     if (msLeft <= 0) {
-      // Only beep if still on timer
       if (isGameActive(localId)) playBeep();
       scheduleNext(performance.now());
     }
