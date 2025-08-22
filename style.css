@@ -105,9 +105,16 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
   will-change: transform;
   z-index:2;
 }
+/* Arrow tip must meet the notches’ radius */
 .arrow{
-  position:absolute;left:50%;top:-152px;transform:translateX(-50%);
-  width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:36px solid var(--accent);
+  position:absolute;
+  left:50%;
+  top:-158px;              /* was -152px */
+  transform:translateX(-50%);
+  width:0;height:0;
+  border-left:18px solid transparent;
+  border-right:18px solid transparent;
+  border-bottom:36px solid var(--accent);
   filter:drop-shadow(0 8px 14px rgba(0,0,0,.5));
 }
 
