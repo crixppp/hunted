@@ -190,10 +190,10 @@
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   };
 
-  function adaptiveInterval(nowMs){
-    const minutes = Math.floor((nowMs - startEpochMs) / 60000);
-    return Math.max(20, baseIntervalSeconds - 2*minutes);
-  }
+function adaptiveInterval(nowMs){
+  const minutes = Math.floor((nowMs - startEpochMs) / 60000);
+  return Math.max(3, baseIntervalSeconds - 2*minutes);
+}
   function scheduleNext(nowMs){ currentIntervalSeconds = adaptiveInterval(nowMs); nextAt = nowMs + currentIntervalSeconds*1000; }
 
   function isGameActive(localId) {
