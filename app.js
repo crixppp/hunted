@@ -1,4 +1,4 @@
-// Hunted Web App — arrow rotates & snaps to notches; beeps only on timer; test beeps; adaptive interval
+// Hunted Web App — arrow spins clockwise, snaps to notches, min 3 turns; beeps only on timer; adaptive interval
 (() => {
   const qs = (s, p=document) => p.querySelector(s);
   const qsa = (s, p=document) => [...p.querySelectorAll(s)];
@@ -12,17 +12,15 @@
   function show(name) {
     const leavingTimer = screens.timer.classList.contains('active') && name !== 'timer';
     if (leavingTimer) endGame();
-
     Object.values(screens).forEach(sc => sc.classList.remove('active'));
     screens[name].classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
   }
   document.body.classList.add('home-active');
 
-  // Header logo
+  // Header logo → Home
   qs('#logoBtn').addEventListener('click', () => show('home'));
 
   // Quick Rules modal
@@ -45,24 +43,30 @@
   qs('#btnHost').addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin').addEventListener('click', () => { resetGameState(); show('join'); });
 
-  // Host spinner — ARROW rotates and snaps to 12 notches
+  // Host spinner — ARROW rotates (always clockwise), lands on 12 notches, >= 3 full turns
   const arrowRotor = qs('#arrowRotor');
-  let spinning = false, spinAngle = 0;
+  let spinning = false;
+  let absoluteAngle = 0; // keep increasing (no modulo) to force clockwise interpolation
+
   qs('#btnSpin').addEventListener('click', () => {
     if (spinning) return;
     spinning = true;
 
-    const SLOTS = 12;                           // 12 notches
-    const FULL_TURNS = 4 + Math.floor(Math.random()*4); // 4–7 full spins
-    const slotIndex = Math.floor(Math.random() * SLOTS); // 0..11
-    const step = 360 / SLOTS;                   // 30°
-    const targetDelta = FULL_TURNS * 360 + slotIndex * step;
+    const SLOTS = 12;
+    const STEP = 360 / SLOTS;            // 30°
+    const FULL_TURNS = 3 + Math.floor(Math.random() * 4); // 3–6 full rotations
+    const slotIndex = Math.floor(Math.random() * SLOTS);  // 0..11 exact notch
 
-    spinAngle += targetDelta;
-    arrowRotor.style.transition = 'transform 2.8s cubic-bezier(.12,.73,.13,1)';
-    arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${spinAngle}deg)`;
+    const target = absoluteAngle + FULL_TURNS*360 + slotIndex*STEP;
+    absoluteAngle = target; // advance our running angle so next spin is still clockwise
 
-    setTimeout(() => { arrowRotor.style.transition = 'none'; spinAngle = spinAngle % 360; spinning = false; }, 2900);
+    arrowRotor.style.transition = 'transform 2.9s cubic-bezier(.12,.72,.12,1)'; // nice ease-out
+    arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${absoluteAngle}deg)`;
+
+    setTimeout(() => {
+      arrowRotor.style.transition = 'none';
+      spinning = false;
+    }, 3000);
   });
   qs('#btnHostBack').addEventListener('click', () => show('home'));
 
