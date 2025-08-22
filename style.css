@@ -46,7 +46,7 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 .muted{color:var(--muted)} .small{font-size:12px}
 .screen{display:none} .screen.active{display:block}
 
-/* Spinner (Host) — static dial + rotating arrow) */
+/* Spinner (static dial + rotating arrow) */
 .spinner-wrap{display:flex;justify-content:center;margin:18px 0}
 .spinner{
   position:relative;width:320px;height:320px;border-radius:50%;
@@ -54,16 +54,16 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
   border:10px solid #0e121a;box-shadow:inset 0 0 0 3px #2a3347,0 24px 60px rgba(0,0,0,.55);
   overflow:visible;
 }
+
+/* Dial */
 .spinner-face{
   position:absolute; inset:16px; border-radius:50%;
   background:radial-gradient(140px 140px at 50% 40%, rgba(255,255,255,.04), rgba(255,255,255,0)),
              conic-gradient(from 0deg,#1b2230,#1f2840 40%,#1b2230 80%);
   box-shadow:inset 0 0 40px rgba(0,0,0,.5);
   z-index:1;
-
-  /* clip ticks inside */
-  overflow: hidden;
-  clip-path: circle(50% at 50% 50%);
+  overflow:hidden;
+  clip-path:circle(50% at 50% 50%); /* clip ticks inside */
 }
 .ring{
   position:absolute;inset:8px;border-radius:50%;
@@ -74,30 +74,30 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
   width:18px;height:18px;border-radius:50%;background:#e6ebf3;
   box-shadow:0 0 10px rgba(255,210,122,.6),0 0 2px #000 inset
 }
-/* 12 ticks inside the wheel */
+
+/* 12 ticks (static, radius ≈ 128px inside dial) */
 .tick{
-  position:absolute;
-  left:50%; top:50%;
+  position:absolute; left:50%; top:50%;
   width:3px; height:18px;
   background:linear-gradient(#ffd27a,#f1b84f);
   border-radius:2px;
   filter:drop-shadow(0 0 4px rgba(255,210,122,.6));
   transform-origin:50% 50%;
 }
-.t1 { transform: rotate(  0deg) translateY(-122px); }
-.t2 { transform: rotate( 30deg) translateY(-122px); }
-.t3 { transform: rotate( 60deg) translateY(-122px); }
-.t4 { transform: rotate( 90deg) translateY(-122px); }
-.t5 { transform: rotate(120deg) translateY(-122px); }
-.t6 { transform: rotate(150deg) translateY(-122px); }
-.t7 { transform: rotate(180deg) translateY(-122px); }
-.t8 { transform: rotate(210deg) translateY(-122px); }
-.t9 { transform: rotate(240deg) translateY(-122px); }
-.t10{ transform: rotate(270deg) translateY(-122px); }
-.t11{ transform: rotate(300deg) translateY(-122px); }
-.t12{ transform: rotate(330deg) translateY(-122px); }
+.t1 { transform: rotate(  0deg) translateY(-128px); }
+.t2 { transform: rotate( 30deg) translateY(-128px); }
+.t3 { transform: rotate( 60deg) translateY(-128px); }
+.t4 { transform: rotate( 90deg) translateY(-128px); }
+.t5 { transform: rotate(120deg) translateY(-128px); }
+.t6 { transform: rotate(150deg) translateY(-128px); }
+.t7 { transform: rotate(180deg) translateY(-128px); }
+.t8 { transform: rotate(210deg) translateY(-128px); }
+.t9 { transform: rotate(240deg) translateY(-128px); }
+.t10{ transform: rotate(270deg) translateY(-128px); }
+.t11{ transform: rotate(300deg) translateY(-128px); }
+.t12{ transform: rotate(330deg) translateY(-128px); }
 
-/* Arrow rotor (rotates around centre) */
+/* Rotating arrow (on its own rotor) */
 .arrow-rotor{
   position:absolute;left:50%;top:50%;width:0;height:0;
   transform:translate(-50%,-50%) rotate(0deg);
@@ -105,13 +105,11 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
   will-change: transform;
   z-index:2;
 }
-/* Arrow tip must meet the notches’ radius */
 .arrow{
-  position:absolute;
-  left:50%;
-  top:-158px;              /* was -152px */
+  position:absolute; left:50%;
+  top:-164px; /* = -(tick radius 128 + triangle height 36) so the TIP hits the tick circle */
   transform:translateX(-50%);
-  width:0;height:0;
+  width:0; height:0;
   border-left:18px solid transparent;
   border-right:18px solid transparent;
   border-bottom:36px solid var(--accent);
@@ -150,7 +148,7 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 /* Footer */
 .app-footer{text-align:center;padding:12px;color:var(--muted);border-top:1px solid #1e2330}
 
-/* Playing state: hide everything except header logo and countdown */
+/* Playing state */
 body.playing .app-footer,
 body.playing #screen-home,
 body.playing #screen-host,
