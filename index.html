@@ -9,7 +9,7 @@
 </head>
 <body class="dark">
   <header class="app-header">
-    <!-- Header logo (kept for non-home screens; hidden on Home via CSS :has) -->
+    <!-- Header logo: hidden on Home by JS (no :has in CSS) -->
     <button id="logoBtn" class="brand" aria-label="Go home">
       <img src="logo.png" alt="Hunted logo" class="logo" />
     </button>
@@ -19,12 +19,11 @@
     <!-- Home Screen -->
     <section id="screen-home" class="screen active">
       <div class="card hero">
-        <!-- Centred home logo -->
         <img src="logo.png" alt="Hunted logo" class="home-logo" />
         <div class="actions actions-center">
-          <button id="btnHost" class="primary">Host New Game</button>
-          <button id="btnJoin" class="secondary">Join Game</button>
-          <button id="btnQuickRules" class="ghost">Quick Rules</button>
+          <button id="btnHost" class="primary" type="button">Host New Game</button>
+          <button id="btnJoin" class="secondary" type="button">Join Game</button>
+          <button id="btnQuickRules" class="ghost" type="button">Quick Rules</button>
         </div>
       </div>
     </section>
@@ -34,9 +33,8 @@
       <div class="card">
         <h2>Choose the Hunter</h2>
         <div class="spinner-wrap">
-          <div id="spinner" class="spinner">
+          <div id="spinner" class="spinner" aria-label="Player selector">
             <div class="spinner-face">
-              <!-- 12 ticks -->
               <div class="tick t1"></div><div class="tick t2"></div><div class="tick t3"></div><div class="tick t4"></div>
               <div class="tick t5"></div><div class="tick t6"></div><div class="tick t7"></div><div class="tick t8"></div>
               <div class="tick t9"></div><div class="tick t10"></div><div class="tick t11"></div><div class="tick t12"></div>
@@ -45,9 +43,9 @@
             <div class="arrow"></div>
           </div>
         </div>
-        <div class="actions">
-          <button id="btnSpin" class="primary">Spin</button>
-          <button id="btnHostBack" class="ghost">Back</button>
+        <div class="actions actions-center">
+          <button id="btnSpin" class="primary" type="button">Spin</button>
+          <button id="btnHostBack" class="ghost" type="button">Back</button>
         </div>
       </div>
     </section>
@@ -73,9 +71,9 @@
         </div>
 
         <div class="actions actions-center">
-          <button id="btnSlotSpin" class="primary">Spin</button>
-          <button id="btnSlotContinue" class="secondary" disabled>Continue</button>
-          <button id="btnJoinBack" class="ghost">Back</button>
+          <button id="btnSlotSpin" class="primary" type="button">Spin</button>
+          <button id="btnSlotContinue" class="secondary" type="button" disabled>Continue</button>
+          <button id="btnJoinBack" class="ghost" type="button">Back</button>
         </div>
       </div>
     </section>
@@ -85,8 +83,8 @@
       <div class="card timer-card">
         <div id="countdown" class="countdown">00:30</div>
         <div class="actions prestart actions-center">
-          <button id="btnEnableAudio" class="secondary">Enable sound</button>
-          <button id="btnStart" class="primary">Start</button>
+          <button id="btnEnableAudio" class="secondary" type="button">Enable sound</button>
+          <button id="btnStart" class="primary" type="button">Start</button>
         </div>
       </div>
     </section>
@@ -98,21 +96,19 @@
     <div class="modal-card" role="document">
       <header class="modal-header">
         <h3 id="modalTitle">Quick Rules</h3>
-        <button class="ghost close" data-close aria-label="Close">✕</button>
+        <button class="ghost close" data-close aria-label="Close" type="button">✕</button>
       </header>
       <div class="modal-body">
         <ol>
           <li>4+ players, confined space, walking only.</li>
           <li>Host: <em>Host New Game → Spin</em> to pick the Hunter.</li>
-          <li>Prey: <em>Join Game → Spin</em> to get a random 0:00–2:00 interval.</li>
-          <li>Tap <em>Enable sound</em>, then <em>Start</em>. Your roll is final.</li>
-          <li>Final 10 seconds are red; phone beeps at 0 and repeats.</li>
-          <li>Hunter blindfolds and counts to 30; then hunts.</li>
-          <li>Prey out if touched, if they touch the Hunter, or if they run/speak.</li>
+          <li>Prey: <em>Join Game → Spin</em> for a random 0:00–2:00 interval (final).</li>
+          <li>Tap <em>Enable sound</em>, then <em>Start</em>.</li>
+          <li>Final 10 seconds are red; the phone beeps at 0 and repeats.</li>
         </ol>
       </div>
       <footer class="modal-footer">
-        <button class="primary" data-close>Got it</button>
+        <button class="primary" data-close type="button">Got it</button>
       </footer>
     </div>
   </div>
