@@ -189,7 +189,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Timer & Game lifecycle ----------
   const domCountdown = qs('#countdown');
-  const btnStart     = qs('#btnStart');
+  const btnStart     = qs('#btnStart'); // <— keep this single declaration
 
   let timerRunning = false;
   let nextAt = 0;
@@ -201,22 +201,21 @@ window.addEventListener('DOMContentLoaded', () => {
   let activeGameId = null;
 
   // Wall-clock support + Panic mode
-  let lastBeepAtMs = 0;   // last beep time (perf.now)
+  let lastBeepAtMs = 0;
   let panicMode = false;
   const PANIC_AFTER_MS = 5 * 60 * 1000; // start panic after 5 minutes
   let panicStartMs = 0;
 
-  // --- Smooth panic escalation (recommended) ---
-  // Beep interval ramps from START to END over DURATION seconds after panic begins.
+  // Smooth panic escalation: 1.0s → 0.4s over 7 minutes
   function panicInterval(nowMs){
-    const elapsedSec = (nowMs - panicStartMs) / 1000; // seconds into panic
-    const START = 1.0;    // seconds per beep at panic start
-    const END   = 0.4;    // seconds per beep at max intensity
-    const DURATION = 420; // seconds (7 minutes) to ramp START → END
+    const elapsedSec = (nowMs - panicStartMs) / 1000;
+    const START = 1.0;
+    const END   = 0.4;
+    const DURATION = 420; // seconds
 
-    const p = Math.min(1, elapsedSec / DURATION);          // 0 → 1
-    const easeOutQuad = 1 - (1 - p) * (1 - p);             // smoother curve
-    return START + (END - START) * easeOutQuad;            // seconds per beep
+    const p = Math.min(1, elapsedSec / DURATION);
+    const easeOutQuad = 1 - (1 - p) * (1 - p);
+    return START + (END - START) * easeOutQuad;
   }
 
   const fmt = (sec) => {
@@ -227,7 +226,7 @@ window.addEventListener('DOMContentLoaded', () => {
   function adaptiveInterval(nowMs){
     if (panicMode) return panicInterval(nowMs);
     const minutes = Math.floor((nowMs - startEpochMs) / 60000);
-    return Math.max(3, baseIntervalSeconds - 2 * minutes); // 2s per minute, min 3s
+    return Math.max(3, baseIntervalSeconds - 2 * minutes);
   }
 
   function scheduleNext(referenceMs){
@@ -248,10 +247,9 @@ window.addEventListener('DOMContentLoaded', () => {
       panicMode    = true;
       panicStartMs = now;
       document.body.classList.add('panic');
-      scheduleNext(now); // reschedule immediately at faster rate
+      scheduleNext(now);
       (async () => {
         await ensureAudio();
-        // A quick "panic kick" triplet
         playBeep(120, 1200);
         setTimeout(() => playBeep(120, 1100), 140);
         setTimeout(() => playBeep(120, 1000), 280);
@@ -312,11 +310,9 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!timerRunning) return;
 
     if (document.visibilityState === 'hidden') {
-      // Let RAF stop naturally; we’ll catch up on return
       return;
     }
 
-    // Visible again → catch up using wall-clock
     const now = performance.now();
     let missed = 0;
 
@@ -328,7 +324,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     if (missed > 0) {
       await ensureAudio();
-      playBeep(180, 1100); // subtle catch-up cue
+      playBeep(180, 1100);
     }
 
     if (!rafId) updateCountdown(activeGameId);
@@ -342,8 +338,7 @@ window.addEventListener('DOMContentLoaded', () => {
     show('timer');
   });
 
-  // Start the game: hide extras, keep only countdown
-  const btnStart = qs('#btnStart');
+  // Start the game
   if (btnStart) btnStart.addEventListener('click', async ()=>{
     await ensureAudio();
     document.body.classList.add('playing');
