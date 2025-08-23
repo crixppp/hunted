@@ -1,4 +1,4 @@
-// Hunted — spinner lands exactly on notches; wall-clock catch-up; panic escalation; 3s floor; wake lock
+// Hunted — spinner lands exactly on notches; wall-clock catch-up; smooth panic escalation; 3s floor; wake lock
 window.addEventListener('DOMContentLoaded', () => {
 (() => {
   const qs  = (s, p=document) => p.querySelector(s);
@@ -136,9 +136,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const sT = Math.floor(s / 10), sO = s % 10;
 
     await Promise.all([
-      cycle(slotMin,  [0,1,2],                     1200 + Math.random()*500, m),
-      cycle(slotSecT, [0,1,2,3,4,5],               1500 + Math.random()*500, sT),
-      cycle(slotSecO, [0,1,2,3,4,5,6,7,8,9],       1800 + Math.random()*500, sO)
+      cycle(slotMin,  [0,1,2],               1200 + Math.random()*500, m),
+      cycle(slotSecT, [0,1,2,3,4,5],         1500 + Math.random()*500, sT),
+      cycle(slotSecO, [0,1,2,3,4,5,6,7,8,9], 1800 + Math.random()*500, sO)
     ]);
 
     rolledFinal = true;
@@ -203,34 +203,31 @@ window.addEventListener('DOMContentLoaded', () => {
   // Wall-clock support + Panic mode
   let lastBeepAtMs = 0;   // last beep time (perf.now)
   let panicMode = false;
-  const PANIC_AFTER_MS = 5 * 60 * 1000;
+  const PANIC_AFTER_MS = 5 * 60 * 1000; // start panic after 5 minutes
   let panicStartMs = 0;
 
-  // Panic escalation thresholds (seconds between beeps)
-  const PANIC_PHASES = [
-    { t: 0,     interval: 1.0  }, // 0–30s of panic
-    { t: 30e3,  interval: 0.75 }, // 30–60s
-    { t: 60e3,  interval: 0.5  }  // 60s+
-  ];
+  // --- Smooth panic escalation (recommended) ---
+  // Beep interval ramps from START to END over DURATION seconds after panic begins.
+  function panicInterval(nowMs){
+    const elapsedSec = (nowMs - panicStartMs) / 1000; // seconds into panic
+    const START = 1.0;    // seconds per beep at panic start
+    const END   = 0.4;    // seconds per beep at max intensity
+    const DURATION = 420; // seconds (7 minutes) to ramp START → END
+
+    const p = Math.min(1, elapsedSec / DURATION);          // 0 → 1
+    const easeOutQuad = 1 - (1 - p) * (1 - p);             // smoother curve
+    return START + (END - START) * easeOutQuad;            // seconds per beep
+  }
 
   const fmt = (sec) => {
     const m = Math.floor(sec / 60), s = sec % 60;
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   };
 
-  function panicInterval(nowMs){
-    const elapsed = nowMs - panicStartMs;
-    let phase = PANIC_PHASES[0].interval;
-    for (let i = 0; i < PANIC_PHASES.length; i++) {
-      if (elapsed >= PANIC_PHASES[i].t) phase = PANIC_PHASES[i].interval;
-    }
-    return phase;
-  }
-
   function adaptiveInterval(nowMs){
     if (panicMode) return panicInterval(nowMs);
     const minutes = Math.floor((nowMs - startEpochMs) / 60000);
-    return Math.max(3, baseIntervalSeconds - 5 * minutes);
+    return Math.max(3, baseIntervalSeconds - 2 * minutes); // 2s per minute, min 3s
   }
 
   function scheduleNext(referenceMs){
@@ -254,6 +251,7 @@ window.addEventListener('DOMContentLoaded', () => {
       scheduleNext(now); // reschedule immediately at faster rate
       (async () => {
         await ensureAudio();
+        // A quick "panic kick" triplet
         playBeep(120, 1200);
         setTimeout(() => playBeep(120, 1100), 140);
         setTimeout(() => playBeep(120, 1000), 280);
@@ -345,6 +343,7 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   // Start the game: hide extras, keep only countdown
+  const btnStart = qs('#btnStart');
   if (btnStart) btnStart.addEventListener('click', async ()=>{
     await ensureAudio();
     document.body.classList.add('playing');
