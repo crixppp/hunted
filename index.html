@@ -34,7 +34,6 @@
         <h2>Choose the Hunter</h2>
         <div class="spinner-wrap">
           <div class="spinner" aria-label="Player selector">
-            <!-- static dial -->
             <div class="spinner-face">
               <div class="ring"></div>
               <div class="tick t1"></div><div class="tick t2"></div><div class="tick t3"></div><div class="tick t4"></div>
@@ -42,10 +41,7 @@
               <div class="tick t9"></div><div class="tick t10"></div><div class="tick t11"></div><div class="tick t12"></div>
               <div class="centre-cap"></div>
             </div>
-            <!-- rotating arrow -->
-            <div id="arrowRotor" class="arrow-rotor">
-              <div class="arrow"></div>
-            </div>
+            <div id="arrowRotor" class="arrow-rotor"><div class="arrow"></div></div>
           </div>
         </div>
         <div class="actions actions-center">
@@ -62,17 +58,9 @@
         <p class="muted small">One roll only during a game. Going Home starts a new game and lets you roll again.</p>
 
         <div class="slot-wrap">
-          <div class="slot">
-            <div class="slot-label">min</div>
-            <div id="slotMin" class="slot-value">0</div>
-          </div>
+          <div class="slot"><div class="slot-label">min</div><div id="slotMin" class="slot-value">0</div></div>
           <div class="slot colon">:</div>
-          <div class="slot">
-            <div class="slot-label">sec</div>
-            <div class="slot-value">
-              <span id="slotSecT">0</span><span id="slotSecO">0</span>
-            </div>
-          </div>
+          <div class="slot"><div class="slot-label">sec</div><div class="slot-value"><span id="slotSecT">0</span><span id="slotSecO">0</span></div></div>
         </div>
 
         <div class="actions actions-center">
@@ -80,7 +68,6 @@
           <button id="btnSlotContinue" class="secondary" type="button" disabled>Continue</button>
           <button id="btnJoinBack" class="ghost" type="button">Back</button>
         </div>
-
         <div class="actions actions-center">
           <button id="btnJoinTestBeep" class="ghost" type="button">Test beep</button>
         </div>
@@ -111,22 +98,17 @@
         <ol>
           <li>4+ players, confined space, walking only.</li>
           <li>Host: <em>Host New Game → Spin</em> to pick the Hunter.</li>
-          <li>Prey: <em>Join Game → Spin</em> for a random 0:00–2:00 interval (roll is final for the game).</li>
-          <li>Press <em>Start</em> to begin your timer. Keep the page open; if you leave it, the timer catches up when you return.</li>
-          <li>Final 10 seconds are red; the phone beeps at 0 and repeats. Minimum interval is 3 seconds.</li>
-          <li>After 5 minutes the game enters <strong>Panic Mode</strong>: screen flashes red and beep rate escalates (fast → faster → fastest).</li>
+          <li>Prey: <em>Join Game → Spin</em> for a random 0:00–2:00 interval (roll is final).</li>
+          <li>Press <em>Start</em>. If you leave the page, the timer catches up when you return.</li>
+          <li>Final 10 seconds are red; phone beeps at 0 and repeats (min interval 3s).</li>
+          <li>After 5 minutes: <strong>Panic Mode</strong> — flashing red screen, escalating beeps.</li>
         </ol>
       </div>
-      <footer class="modal-footer">
-        <button class="primary" data-close type="button">Got it</button>
-      </footer>
+      <footer class="modal-footer"><button class="primary" data-close type="button">Got it</button></footer>
     </div>
   </div>
 
-  <footer class="app-footer">
-    <small>created by Sam Gilliot</small>
-  </footer>
-
- <script defer src="app.js"></script>
+  <footer class="app-footer"><small>created by Sam Gilliot</small></footer>
+  <script defer src="app.js"></script>
 </body>
 </html>
