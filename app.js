@@ -230,7 +230,7 @@ window.addEventListener('DOMContentLoaded', () => {
   function adaptiveInterval(nowMs){
     if (panicMode) return panicInterval(nowMs);
     const minutes = Math.floor((nowMs - startEpochMs) / 60000);
-    return Math.max(3, baseIntervalSeconds - 2 * minutes);
+    return Math.max(3, baseIntervalSeconds - 5 * minutes);
   }
 
   function scheduleNext(referenceMs){
