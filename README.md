@@ -40,6 +40,6 @@ Built as a static site, deployable on **GitHub Pages**.
 - 🟥 **Visual Countdown** → large red warning during last 10s.  
 - 🔒 **Unpausable Timer** → once started, it runs until eliminated or game ends.  
 - 🌙 **Wake Lock** → keeps screen awake while timer runs.  
-- ⏱️ **Adaptive Interval** → every minute, beep interval decreases by 2s (never below 3s).  
+- ⏱️ **Adaptive Interval** → every minute, beep interval decreases by 5s (never below 3s).  
 - 🚨 **Panic Mode** → if the game lasts over 5 minutes, all timers flash red and beeps escalate rapidly (1.0s → 0.75s → 0.5s).  
 - ⏳ **Catch-up Resume** → if you leave/lock your phone, on return your timer “jumps ahead” to where it should be.  
