@@ -1,4 +1,4 @@
-// Hunted Web App — arrow spins clockwise, snaps to notches, ≥3 turns; beeps only on timer; adaptive interval
+// Hunted — spinner lands exactly on notches; wall-clock catch-up; panic escalation; 3s floor; wake lock
 (() => {
   const qs = (s, p=document) => p.querySelector(s);
   const qsa = (s, p=document) => [...p.querySelectorAll(s)];
@@ -79,7 +79,7 @@
     stepCount += deltaSteps; // strictly increasing → always clockwise
     const angle = stepCount * STEP;
 
-    arrowRotor.style.transition = 'transform 3.0s cubic-bezier(.12,.72,.12,1)'; // smooth spin & ease-out
+    arrowRotor.style.transition = 'transform 3.0s cubic-bezier(.12,.72,.12,1)';
     arrowRotor.style.transform  = `translate(-50%, -50%) rotate(${angle}deg)`;
 
     setTimeout(() => {
@@ -138,7 +138,7 @@
 
   qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
 
-  // Restore within the same game session
+  // Restore within the same game session (same page load)
   const storedFinal = Number(localStorage.getItem('assignedSeconds_final'));
   const storedLock  = localStorage.getItem('rolledFinal') === '1';
   if (storedLock && Number.isFinite(storedFinal)) {
@@ -185,16 +185,44 @@
   let wakeLock = null;
   let activeGameId = null;
 
+  // Wall-clock support
+  let lastBeepAtMs = 0;   // last beep time (perf.now)
+  let panicMode = false;
+  const PANIC_AFTER_MS = 5 * 60 * 1000;
+  let panicStartMs = 0;
+
+  // Panic escalation thresholds (seconds between beeps)
+  const PANIC_PHASES = [
+    { t: 0,    interval: 1.0 },  // first 30s of panic → 1.0s
+    { t: 30e3, interval: 0.75 }, // 30–60s → 0.75s
+    { t: 60e3, interval: 0.5 }   // 60s+ → 0.5s
+  ];
+
   const fmt = (sec) => {
     const m = Math.floor(sec / 60), s = sec % 60;
     return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   };
 
-function adaptiveInterval(nowMs){
-  const minutes = Math.floor((nowMs - startEpochMs) / 60000);
-  return Math.max(3, baseIntervalSeconds - 5*minutes);
-}
-  function scheduleNext(nowMs){ currentIntervalSeconds = adaptiveInterval(nowMs); nextAt = nowMs + currentIntervalSeconds*1000; }
+  function panicInterval(nowMs){
+    const elapsed = nowMs - panicStartMs;
+    // find the last phase where elapsed >= t
+    let phase = PANIC_PHASES[0].interval;
+    for (let i=0;i<PANIC_PHASES.length;i++){
+      if (elapsed >= PANIC_PHASES[i].t) phase = PANIC_PHASES[i].interval;
+    }
+    return phase;
+  }
+
+  function adaptiveInterval(nowMs){
+    if (panicMode) return panicInterval(nowMs);
+    const minutes = Math.floor((nowMs - startEpochMs) / 60000);
+    return Math.max(3, baseIntervalSeconds - 2*minutes);
+  }
+
+  function scheduleNext(referenceMs){
+    currentIntervalSeconds = adaptiveInterval(referenceMs);
+    nextAt = referenceMs + currentIntervalSeconds * 1000;
+  }
 
   function isGameActive(localId) {
     return document.body.classList.contains('playing') && timerRunning && activeGameId === localId;
@@ -203,19 +231,41 @@ function adaptiveInterval(nowMs){
   function updateCountdown(localId){
     if (!isGameActive(localId)) return;
     const now = performance.now();
+
+    // Enter panic mode after 5 minutes (once)
+    if (!panicMode && (now - startEpochMs) >= PANIC_AFTER_MS) {
+      panicMode = true;
+      panicStartMs = now;
+      document.body.classList.add('panic');
+      scheduleNext(now); // reschedule immediately at faster rate
+      (async () => {
+        await ensureAudio();
+        playBeep(120, 1200);
+        setTimeout(() => playBeep(120, 1100), 140);
+        setTimeout(() => playBeep(120, 1000), 280);
+      })();
+    }
+
     const msLeft = Math.max(0, nextAt - now);
     const secLeft = Math.ceil(msLeft / 1000);
     domCountdown.textContent = fmt(secLeft);
     if (secLeft <= 10) domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
+
     if (msLeft <= 0) {
       if (isGameActive(localId)) playBeep();
-      scheduleNext(performance.now());
+      lastBeepAtMs = nextAt;
+      scheduleNext(lastBeepAtMs);
     }
     rafId = requestAnimationFrame(() => updateCountdown(localId));
   }
 
   async function requestWakeLock(){
-    try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{wakeLock=null;}); } }catch{}
+    try{
+      if('wakeLock' in navigator){
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release',()=>{wakeLock=null;});
+      }
+    }catch{}
   }
   function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch{} }
 
@@ -223,7 +273,11 @@ function adaptiveInterval(nowMs){
     activeGameId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     timerRunning = true;
     startEpochMs = performance.now();
-    scheduleNext(startEpochMs);
+    lastBeepAtMs = startEpochMs;
+    panicMode = false;
+    document.body.classList.remove('panic');
+
+    scheduleNext(lastBeepAtMs);
     domCountdown.textContent = fmt(currentIntervalSeconds);
     requestWakeLock();
     updateCountdown(activeGameId);
@@ -235,11 +289,36 @@ function adaptiveInterval(nowMs){
     if (rafId) cancelAnimationFrame(rafId);
     releaseWakeLock();
     domCountdown.classList.remove('red');
+    panicMode = false;
+    document.body.classList.remove('panic');
   }
 
-  // Stop if the tab/app goes to background
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') endGame();
+  // Stop beeping when tab hidden, but catch up on return
+  document.addEventListener('visibilitychange', async () => {
+    if (!timerRunning) return;
+
+    if (document.visibilityState === 'hidden') {
+      // Just note the time; animation frame will stop naturally
+      return;
+    }
+
+    // We became visible again – catch up using wall-clock time
+    const now = performance.now();
+
+    // Walk forward through any missed beeps; recompute interval each step
+    let missed = 0;
+    while (now >= nextAt) {
+      missed++;
+      lastBeepAtMs = nextAt;
+      scheduleNext(lastBeepAtMs);
+    }
+
+    if (missed > 0) {
+      await ensureAudio();
+      playBeep(180, 1100); // subtle catch-up cue
+    }
+
+    if (!rafId) updateCountdown(activeGameId);
   });
 
   // Join → Timer
@@ -251,6 +330,7 @@ function adaptiveInterval(nowMs){
   });
 
   // Start the game: hide extras, keep only countdown
+  const btnStart = qs('#btnStart');
   btnStart.addEventListener('click', async ()=>{
     await ensureAudio();
     document.body.classList.add('playing');
