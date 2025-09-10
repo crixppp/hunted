@@ -155,15 +155,18 @@ document.addEventListener('DOMContentLoaded', function () {
   // ---------- Audio / Chime (overlapping) ----------
   function playChime() {
     // New Audio object each time → allows overlapping chimes
-    const audio = new Audio('chime.mp3');
-    audio.preload = 'auto';     // hint to cache
-    audio.crossOrigin = 'anonymous'; // safe if hosted on same origin anyway
+    const audio = new Audio('chime.mp3?v=1'); // cache-bust
+    audio.preload = 'auto';
     audio.volume = 1.0;
     audio.play().catch(function(err){
       console.warn('Audio playback failed:', err);
     });
     if (navigator.vibrate) navigator.vibrate(50);
   }
+
+  // Force any legacy playBeep/ensureAudio calls to use MP3
+  window.playBeep   = function(){ try { playChime(); } catch(e) { console.warn(e); } };
+  window.ensureAudio = async function(){ /* no-op; HTMLAudio doesn't need it */ };
 
   const btnJoinTestBeep  = qs('#btnJoinTestBeep');
   const btnTimerTestBeep = qs('#btnTimerTestBeep');
@@ -255,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!rafId) updateCountdown(activeGameId);
   });
 
-  // Join → Timer (keep or swap with your auto-start version)
+  // Join → Timer (manual; switch to auto-start if you prefer)
   if (btnSlotContinue) btnSlotContinue.addEventListener('click', function(){
     if (!rolledFinal || assignedSeconds == null) return;
     baseIntervalSeconds = assignedSeconds;
@@ -264,6 +267,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Start the game (manual start button)
+  const btnStart = qs('#btnStart');
   if (btnStart) btnStart.addEventListener('click', function(){
     document.body.classList.add('playing');
     qsa('#screen-timer .prestart').forEach(function(el){ el.parentNode && el.parentNode.removeChild(el); });
