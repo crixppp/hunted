@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Hunted</title>
   <meta name="theme-color" content="#0f1115"/>
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css?v=final" />
 </head>
 <body class="dark">
+  <!-- Header -->
   <header class="app-header">
     <button id="logoBtn" class="brand" aria-label="Go home" type="button">
       <img src="logo.png" alt="Hunted logo" class="logo" />
@@ -34,6 +35,7 @@
         <h2>Choose the Hunter</h2>
         <div class="spinner-wrap">
           <div class="spinner" aria-label="Player selector">
+            <!-- static dial -->
             <div class="spinner-face">
               <div class="ring"></div>
               <div class="tick t1"></div><div class="tick t2"></div><div class="tick t3"></div><div class="tick t4"></div>
@@ -41,7 +43,10 @@
               <div class="tick t9"></div><div class="tick t10"></div><div class="tick t11"></div><div class="tick t12"></div>
               <div class="centre-cap"></div>
             </div>
-            <div id="arrowRotor" class="arrow-rotor"><div class="arrow"></div></div>
+            <!-- rotating arrow -->
+            <div id="arrowRotor" class="arrow-rotor">
+              <div class="arrow"></div>
+            </div>
           </div>
         </div>
         <div class="actions actions-center">
@@ -58,9 +63,17 @@
         <p class="muted small">One roll only during a game. Going Home starts a new game and lets you roll again.</p>
 
         <div class="slot-wrap">
-          <div class="slot"><div class="slot-label">min</div><div id="slotMin" class="slot-value">0</div></div>
+          <div class="slot">
+            <div class="slot-label">min</div>
+            <div id="slotMin" class="slot-value">0</div>
+          </div>
           <div class="slot colon">:</div>
-          <div class="slot"><div class="slot-label">sec</div><div class="slot-value"><span id="slotSecT">0</span><span id="slotSecO">0</span></div></div>
+          <div class="slot">
+            <div class="slot-label">sec</div>
+            <div class="slot-value">
+              <span id="slotSecT">0</span><span id="slotSecO">0</span>
+            </div>
+          </div>
         </div>
 
         <div class="actions actions-center">
@@ -68,6 +81,7 @@
           <button id="btnSlotContinue" class="secondary" type="button" disabled>Continue</button>
           <button id="btnJoinBack" class="ghost" type="button">Back</button>
         </div>
+
         <div class="actions actions-center">
           <button id="btnJoinTestBeep" class="ghost" type="button">Test beep</button>
         </div>
@@ -98,18 +112,22 @@
         <ol>
           <li>4+ players, confined space, walking only.</li>
           <li>Host: <em>Host New Game → Spin</em> to pick the Hunter.</li>
-          <li>Prey: <em>Join Game → Spin</em> for a random 0:00–2:00 interval (roll is final).</li>
-          <li>Press <em>Start</em>. If you leave the page, the timer catches up when you return.</li>
-          <li>Final 10 seconds are red; phone beeps at 0 and repeats (min interval 3s).</li>
-          <li>After 5 minutes: <strong>Panic Mode</strong> — flashing red screen, escalating beeps.</li>
+          <li>Prey: <em>Join Game → Spin</em> for a random 0:00–2:00 interval.</li>
+          <li>Press <em>Continue</em> to begin your timer automatically.</li>
+          <li>Final 10 seconds are red; the phone beeps at 0 and repeats.</li>
         </ol>
       </div>
-      <footer class="modal-footer"><button class="primary" data-close type="button">Got it</button></footer>
+      <footer class="modal-footer">
+        <button class="primary" data-close type="button">Got it</button>
+      </footer>
     </div>
   </div>
 
-  <footer class="app-footer"><small>created by Sam Gilliot</small></footer>
-  <script defer src="app.js"></script>
-  <script defer src="app.js?v=mp3-2"></script>
+  <footer class="app-footer">
+    <small>created by Sam Gilliot</small>
+  </footer>
+
+  <!-- Load the app script at the very end -->
+  <script defer src="app.js?v=mp3-3"></script>
 </body>
 </html>
