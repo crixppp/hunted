@@ -1,15 +1,6 @@
-// Hunted — spinner on notches; wall-clock catch-up; smooth panic; 3s floor; wake lock
+// Hunted — spinner on notches; wall-clock catch-up; smooth panic; 3s floor; wake lock; MP3 chime (overlapping)
 document.addEventListener('DOMContentLoaded', function () {
   'use strict';
-
-  // ---- Tiny error banner so you know immediately if JS crashed
-  window.addEventListener('error', function (e) {
-    const b = document.createElement('div');
-    b.textContent = 'JavaScript error: ' + (e.error && e.error.message ? e.error.message : e.message);
-    b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#ff4d4f;color:#fff;padding:8px 12px;font:14px/1.3 system-ui;';
-    document.body.appendChild(b);
-    console.error(e.error || e.message, e);
-  });
 
   const qs  = (s, p=document) => p.querySelector(s);
   const qsa = (s, p=document) => Array.prototype.slice.call(p.querySelectorAll(s));
@@ -161,30 +152,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   } catch {}
 
-  // Audio
-  let audioCtx = null;
-  async function ensureAudio(){
-    if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} }
-    if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-  }
-  function playBeep(durationMs, frequency){
-    durationMs = durationMs == null ? 300 : durationMs;
-    frequency  = frequency  == null ? 1200 : frequency;
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-    osc.type = 'square'; osc.frequency.value = frequency;
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    const t = audioCtx.currentTime;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + durationMs/1000);
-    osc.start(t); osc.stop(t + durationMs/1000);
+  // ---------- Audio / Chime (overlapping) ----------
+  function playChime() {
+    // New Audio object each time → allows overlapping chimes
+    const audio = new Audio('chime.mp3');
+    audio.preload = 'auto';     // hint to cache
+    audio.crossOrigin = 'anonymous'; // safe if hosted on same origin anyway
+    audio.volume = 1.0;
+    audio.play().catch(function(err){
+      console.warn('Audio playback failed:', err);
+    });
     if (navigator.vibrate) navigator.vibrate(50);
   }
+
   const btnJoinTestBeep  = qs('#btnJoinTestBeep');
   const btnTimerTestBeep = qs('#btnTimerTestBeep');
-  if (btnJoinTestBeep)  btnJoinTestBeep.addEventListener('click',  async function(){ await ensureAudio(); playBeep(200,1000); });
-  if (btnTimerTestBeep) btnTimerTestBeep.addEventListener('click', async function(){ await ensureAudio(); playBeep(200,1000); });
+  if (btnJoinTestBeep)  btnJoinTestBeep.addEventListener('click',  function(){ playChime(); });
+  if (btnTimerTestBeep) btnTimerTestBeep.addEventListener('click', function(){ playChime(); });
 
   // Timer lifecycle
   const domCountdown = qs('#countdown');
@@ -222,7 +206,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!panicMode && (now - startEpochMs) >= PANIC_AFTER_MS) {
       panicMode = true; panicStartMs = now; document.body.classList.add('panic');
       scheduleNext(now);
-      (async function(){ await ensureAudio(); playBeep(120,1200); setTimeout(function(){playBeep(120,1100)},140); setTimeout(function(){playBeep(120,1000)},280); })();
+      // “panic kick” triplet using the MP3
+      playChime(); setTimeout(playChime, 140); setTimeout(playChime, 280);
     }
 
     const msLeft = Math.max(0, nextAt - now);
@@ -232,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (secLeft <= 10) domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
     }
     if (msLeft <= 0) {
-      if (isGameActive(localId)) playBeep();
+      if (isGameActive(localId)) playChime();
       lastBeepAtMs = nextAt;
       scheduleNext(lastBeepAtMs);
     }
@@ -260,32 +245,26 @@ document.addEventListener('DOMContentLoaded', function () {
     panicMode = false; document.body.classList.remove('panic');
   }
 
-  document.addEventListener('visibilitychange', async function(){
+  document.addEventListener('visibilitychange', function(){
     if (!timerRunning) return;
     if (document.visibilityState === 'hidden') return;
     const now = performance.now();
     var missed = 0;
     while (now >= nextAt) { missed++; lastBeepAtMs = nextAt; scheduleNext(lastBeepAtMs); }
-    if (missed > 0) { await ensureAudio(); playBeep(180,1100); }
+    if (missed > 0) { playChime(); } // subtle catch-up cue
     if (!rafId) updateCountdown(activeGameId);
   });
 
-// Join → Timer (auto-start)
-if (btnSlotContinue) btnSlotContinue.addEventListener('click', async () => {
-  if (!rolledFinal || assignedSeconds == null) return;
-  baseIntervalSeconds = assignedSeconds;
-  domCountdown.textContent = fmt(baseIntervalSeconds);
-  show('timer');
+  // Join → Timer (keep or swap with your auto-start version)
+  if (btnSlotContinue) btnSlotContinue.addEventListener('click', function(){
+    if (!rolledFinal || assignedSeconds == null) return;
+    baseIntervalSeconds = assignedSeconds;
+    if (domCountdown) domCountdown.textContent = fmt(baseIntervalSeconds);
+    show('timer');
+  });
 
-  // Start immediately
-  await ensureAudio();
-  document.body.classList.add('playing');
-  qsa('#screen-timer .prestart').forEach(el => el.remove());
-  startGame();
-});
-
-  if (btnStart) btnStart.addEventListener('click', async function(){
-    await ensureAudio();
+  // Start the game (manual start button)
+  if (btnStart) btnStart.addEventListener('click', function(){
     document.body.classList.add('playing');
     qsa('#screen-timer .prestart').forEach(function(el){ el.parentNode && el.parentNode.removeChild(el); });
     startGame();
