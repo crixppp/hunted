@@ -270,12 +270,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!rafId) updateCountdown(activeGameId);
   });
 
-  if (btnSlotContinue) btnSlotContinue.addEventListener('click', function(){
-    if (!rolledFinal || assignedSeconds == null) return;
-    baseIntervalSeconds = assignedSeconds;
-    if (domCountdown) domCountdown.textContent = fmt(baseIntervalSeconds);
-    show('timer');
-  });
+// Join → Timer (auto-start)
+if (btnSlotContinue) btnSlotContinue.addEventListener('click', async () => {
+  if (!rolledFinal || assignedSeconds == null) return;
+  baseIntervalSeconds = assignedSeconds;
+  domCountdown.textContent = fmt(baseIntervalSeconds);
+  show('timer');
+
+  // Start immediately
+  await ensureAudio();
+  document.body.classList.add('playing');
+  qsa('#screen-timer .prestart').forEach(el => el.remove());
+  startGame();
+});
 
   if (btnStart) btnStart.addEventListener('click', async function(){
     await ensureAudio();
