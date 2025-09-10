@@ -1,5 +1,7 @@
 # 🕵️‍♂️ Hunted  
 
+https://crixppp.github.io/hunted/
+
 A live-action hide-and-seek / survival game played in confined spaces using your phone as a timer.  
 Built as a static site, deployable on **GitHub Pages**.  
 
