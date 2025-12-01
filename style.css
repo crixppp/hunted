@@ -93,6 +93,7 @@ body.playing .countdown{font-size:clamp(56px,20vw,140px);border-width:2px;backgr
 
 /* Eliminated button */
 
+
 .eliminated-btn{--fill:0%;position:fixed;right:14px;bottom:18px;z-index:140;display:none;align-items:center;gap:8px;
   background:linear-gradient(90deg,rgba(255,255,255,.38) var(--fill),rgba(255,255,255,0) var(--fill)), var(--danger);
   color:#160000;box-shadow:0 10px 24px rgba(0,0,0,.35),0 0 0 2px rgba(0,0,0,.1);border-radius:999px;padding:12px 18px;font-weight:700;
@@ -103,11 +104,13 @@ body.playing .countdown{font-size:clamp(56px,20vw,140px);border-width:2px;backgr
 body.timer-active .eliminated-btn{display:flex}
 
 
+
 /* Panic mode flash */
 @keyframes panicFlash{0%{color:var(--danger)}50%{color:#ffc2c2}100%{color:var(--danger)}}
 body.panic .countdown{animation:panicFlash .5s steps(2,end) infinite}
 
 /* Beep flash */
+
 
 
 

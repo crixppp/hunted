@@ -58,8 +58,10 @@ function wireUi(doc = document) {
 
 
 
+
   let flashTimeout = null;
   let flashDurationMs = 800;
+
 
 
 
@@ -170,6 +172,7 @@ function wireUi(doc = document) {
   setFlashDuration();
 
 
+
   function setFlashDuration() {
 
 
@@ -185,6 +188,7 @@ function wireUi(doc = document) {
   }
   chime.addEventListener('loadedmetadata', setFlashDuration);
   setFlashDuration();
+
 
 
   let audioPrimed = false;
@@ -224,10 +228,12 @@ function wireUi(doc = document) {
 
 
 
+
     body.classList.add('flash-active');
     clearTimeout(flashTimeout);
     const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
     flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+
 
 
 
@@ -352,7 +358,9 @@ function wireUi(doc = document) {
 
 
 
+
     body.classList.remove('flash-active');
+
 
 
 
