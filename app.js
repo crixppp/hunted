@@ -78,7 +78,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Audio — MP3 chime (overlapping)
-  function playChime(){ new Audio('chime.mp3').play().catch(()=>{}); if(navigator.vibrate)navigator.vibrate(50); }
+  const chime = new Audio('chime.mp3');
+  chime.preload = 'auto';
+
+  // Unlock audio on first user gesture so timer-driven plays aren't blocked.
+  function unlockAudio(){
+    chime.play().then(()=>{ chime.pause(); chime.currentTime = 0; }).catch(()=>{});
+    document.removeEventListener('pointerdown', unlockAudio);
+  }
+  document.addEventListener('pointerdown', unlockAudio);
+
+  function playChime(){
+    chime.currentTime = 0;
+    chime.play().catch(()=>{});
+    if(navigator.vibrate)navigator.vibrate(50);
+  }
 
   qs('#btnJoinTestBeep').addEventListener('click', playChime);
   qs('#btnTimerTestBeep').addEventListener('click', playChime);
