@@ -51,48 +51,17 @@ function wireUi(doc = document) {
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
-  const eliminatedBtn = qs('#btnEliminated', body);
-  let flashDurationMs = 700;
 
-  flashOverlay?.addEventListener('animationend', () => {
-    flashOverlay.classList.remove('flash-active');
-  });
 
-  const ELIMINATE_HOLD_MS = 1000;
-  let eliminateHoldId = null;
-  let eliminateHoldStart = 0;
 
-  function resetEliminateHold() {
-    if (!eliminatedBtn) return;
-    if (eliminateHoldId) cancelAnimationFrame(eliminateHoldId);
-    eliminateHoldId = null;
-    eliminateHoldStart = 0;
-    eliminatedBtn.style.setProperty('--fill', '0%');
-    eliminatedBtn.classList.remove('holding');
-  }
 
-  function tickEliminateHold() {
-    if (!eliminatedBtn || !eliminateHoldStart) return;
-    const progress = Math.min(1, (performance.now() - eliminateHoldStart) / ELIMINATE_HOLD_MS);
-    eliminatedBtn.style.setProperty('--fill', `${progress * 100}%`);
-    if (progress >= 1) {
-      resetEliminateHold();
-      show('home');
-      return;
-    }
-    eliminateHoldId = requestAnimationFrame(tickEliminateHold);
-  }
 
-  eliminatedBtn?.addEventListener('pointerdown', () => {
-    resetEliminateHold();
-    eliminateHoldStart = performance.now();
-    eliminatedBtn.classList.add('holding');
-    eliminatedBtn.style.setProperty('--fill', '0%');
-    eliminateHoldId = requestAnimationFrame(tickEliminateHold);
-  });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt => {
-    eliminatedBtn?.addEventListener(evt, resetEliminateHold);
-  });
+  let flashTimeout = null;
+  let flashDurationMs = 800;
+
+
+
+
 
   function resetGameState() {
     try {
@@ -182,10 +151,17 @@ function wireUi(doc = document) {
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
 
   function setFlashDuration() {
-    if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
 
-    const adjusted = chime.duration * 1000 - 180;
-    flashDurationMs = Math.max(320, adjusted);
+
+    if (Number.isFinite(chime.duration) && chime.duration > 0) {
+
+
+      flashDurationMs = chime.duration * 1000;
+
+
+    }
+
+
   }
   chime.addEventListener('loadedmetadata', setFlashDuration);
   setFlashDuration();
@@ -223,13 +199,20 @@ function wireUi(doc = document) {
 
   function flashForBeep() {
     if (!flashOverlay) return;
-    setFlashDuration();
+
+
+
+
+
+    body.classList.add('flash-active');
+    clearTimeout(flashTimeout);
     const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
-    flashOverlay.style.setProperty('--flash-duration', `${duration}ms`);
-    flashOverlay.classList.remove('flash-active');
-    // force reflow so the animation restarts even if beeps are close together
-    void flashOverlay.offsetWidth;
-    flashOverlay.classList.add('flash-active');
+    flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+
+
+
+
+
   }
 
   function playChime() {
@@ -339,7 +322,17 @@ function wireUi(doc = document) {
     if (rafId) cancelAnimationFrame(rafId);
     domCountdown.classList.remove('red');
     body.classList.remove('panic');
-    flashOverlay?.classList.remove('flash-active');
+
+
+
+
+
+    body.classList.remove('flash-active');
+
+
+
+
+
     releaseWakeLock();
   }
 
