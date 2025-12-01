@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Audio — MP3 chime (overlapping)
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
+  chime.volume = 1;
 
   // Unlock audio on first user gesture so timer-driven plays aren't blocked.
   function unlockAudio(){
@@ -106,22 +107,40 @@ document.addEventListener('DOMContentLoaded', () => {
   const PANIC_AFTER=5*60*1000;
   const prestartSelector = '#screen-timer .prestart';
 
+
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function adaptive(now){if(panic)return Math.max(0.4,(1-((now-panicStart)/420000))*0.6+0.4);const mins=Math.floor((now-start)/60000);return Math.max(3,base-2*mins);}
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){if(!timerRunning||id!==gameId)return;const now=performance.now();
     if(!panic&&now-start>=PANIC_AFTER){panic=true;panicStart=now;document.body.classList.add('panic');}
-    const left=Math.max(0,nextAt-now), sec=Math.ceil(left/1000);domCountdown.textContent=fmt(sec);
+    const left=Math.max(0,nextAt-now), displayLeft=Math.max(0,left-120), sec=Math.ceil(displayLeft/1000);domCountdown.textContent=fmt(sec);
     if(sec<=10)domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
-    if(left<=0){playChime();schedule(nextAt);} rafId=requestAnimationFrame(()=>update(id));}
+    if(left<=120){playChime();schedule(now);} rafId=requestAnimationFrame(()=>update(id));}
   let gameId=null;
-  function startGame(){gameId=Date.now();timerRunning=true;start=performance.now();schedule(start);update(gameId);}
-  function endGame(){timerRunning=false;if(rafId)cancelAnimationFrame(rafId);domCountdown.classList.remove('red');document.body.classList.remove('panic');}
+  async function requestWakeLock(){
+    if(!('wakeLock' in navigator)) return;
+    try{
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release',()=>{wakeLock=null; if(timerRunning) requestWakeLock();});
+    }catch(err){wakeLock=null;}
+  }
+  function releaseWakeLock(){ if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock=null; } }
+  function startGame(){gameId=Date.now();timerRunning=true;start=performance.now();schedule(start);requestWakeLock();update(gameId);}
+  function endGame(){timerRunning=false;if(rafId)cancelAnimationFrame(rafId);domCountdown.classList.remove('red');document.body.classList.remove('panic');releaseWakeLock();}
+
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && timerRunning) requestWakeLock(); });
 
   function clearPrestart(){
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
+
+
+  function clearPrestart(){
+    const prestart = qsa(prestartSelector);
+    if(prestart.length) prestart.forEach(el=>el.remove());
+  }
+
 
   qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
   qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
