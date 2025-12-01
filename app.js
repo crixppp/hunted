@@ -48,6 +48,9 @@ function wireUi(doc = document) {
   const slotSecO = qs('#slotSecO');
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
+  const flashOverlay = qs('.flash-overlay', body);
+  let flashTimeout = null;
+  let flashDurationMs = 800;
 
   function resetGameState() {
     try {
@@ -136,6 +139,14 @@ function wireUi(doc = document) {
   chime.volume = 1;
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
 
+  function setFlashDuration() {
+    if (Number.isFinite(chime.duration) && chime.duration > 0) {
+      flashDurationMs = chime.duration * 1000;
+    }
+  }
+  chime.addEventListener('loadedmetadata', setFlashDuration);
+  setFlashDuration();
+
   let audioPrimed = false;
   function primeChime() {
     if (audioPrimed) return;
@@ -167,11 +178,20 @@ function wireUi(doc = document) {
 
   doc.addEventListener('pointerdown', unlockAudio);
 
+  function flashForBeep() {
+    if (!flashOverlay) return;
+    body.classList.add('flash-active');
+    clearTimeout(flashTimeout);
+    const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
+    flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+  }
+
   function playChime() {
     chimeLayers.forEach(layer => {
       layer.currentTime = 0;
       layer.play().catch(() => {});
     });
+    flashForBeep();
     if (navigator.vibrate) navigator.vibrate(50);
   }
 
@@ -273,6 +293,7 @@ function wireUi(doc = document) {
     if (rafId) cancelAnimationFrame(rafId);
     domCountdown.classList.remove('red');
     body.classList.remove('panic');
+    body.classList.remove('flash-active');
     releaseWakeLock();
   }
 
