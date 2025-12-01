@@ -1,7 +1,12 @@
 // Hunted — spinner on notches; wall-clock catch-up; smooth panic; 3s floor; wake lock; MP3 chime
 document.addEventListener('DOMContentLoaded', () => {
   const qs = (s, p=document) => p.querySelector(s);
-  const qsa = (s, p=document) => [...p.querySelectorAll(s)];
+  const qsa = (s, p=document) => Array.prototype.slice.call(p.querySelectorAll(s));
+  const on = (sel, type, handler) => {
+    const el = qs(sel);
+    if (el) el.addEventListener(type, handler);
+    return el;
+  };
 
   const screens = {
     home: qs('#screen-home'),
@@ -11,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
 
+
   let activeScreen = screens.home;
 
   function show(name) {
@@ -18,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeScreen === screens[name]) return;
     activeScreen.classList.remove('active');
     activeScreen = screens[name];
+
     activeScreen.classList.add('active');
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
@@ -25,12 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (activeScreen) document.body.classList.add('home-active');
 
   // Header logo → home
+
   qs('#logoBtn')?.addEventListener('click', () => show('home'));
 
   // Quick Rules modal
   const modal = qs('#modal');
   qs('#btnQuickRules')?.addEventListener('click', () => { modal?.classList.add('show'); });
   qsa('[data-close]').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
+
 
   // Reset game state
   let assignedSeconds = null, rolledFinal = false;
@@ -51,15 +60,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnSlotContinue) btnSlotContinue.disabled = true;
   }
 
+
   qs('#btnHost')?.addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin')?.addEventListener('click', () => { resetGameState(); show('join'); });
   qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
   qs('#btnHostBack')?.addEventListener('click', () => show('home'));
 
+
   // Spinner
   const arrowRotor = qs('#arrowRotor'); let spinning=false, stepCount=0;
   const STEP=30, SLOTS=12;
+
   qs('#btnSpin')?.addEventListener('click', () => {
+
     if(!arrowRotor) return;
     if (spinning) return; spinning=true;
     stepCount = Math.round(stepCount);
@@ -78,7 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
       (function tick(){ if(Date.now()>=end){el.textContent=target;res();return;}
         el.textContent=vals[i%vals.length];i++;setTimeout(tick,50);})();});
   }
+
   qs('#btnSlotSpin')?.addEventListener('click', async ()=>{
+
     if(!slotMin||!slotSecT||!slotSecO||!btnSlotSpin||!btnSlotContinue)return;
     if(rolledFinal) return;
     btnSlotSpin.disabled=true;
@@ -98,9 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
   chime.volume = 1;
+
 
 
 
@@ -118,9 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function unlockAudio(){
 
 
+
     chimeLayers.forEach(layer => {
       layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
     });
+
 
 
 
@@ -135,8 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+
   qs('#btnJoinTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
   qs('#btnTimerTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
+
 
 
   // Timer
@@ -152,7 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   const prestartSelector = '#screen-timer .prestart';
+
 
 
 
@@ -163,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){
     if(!timerRunning||id!==gameId)return;
+
 
 
     const now=performance.now();
@@ -195,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   function clearPrestart(){
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
@@ -202,7 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
   qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
+
 
 });
