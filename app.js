@@ -37,7 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSlotSpin = qs('#btnSlotSpin'), btnSlotContinue = qs('#btnSlotContinue');
 
   function resetGameState() {
-    localStorage.clear();
+    try {
+      localStorage.clear();
+    } catch (err) {
+      console.warn('Unable to access storage; continuing without clearing state', err);
+    }
     assignedSeconds = null; rolledFinal = false;
     slotMin.textContent = '0'; slotSecT.textContent = '0'; slotSecO.textContent = '0';
     btnSlotSpin.disabled = false; btnSlotContinue.disabled = true;
@@ -85,9 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
   chime.volume = 1;
+
 
 
 
@@ -102,9 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function unlockAudio(){
 
+
     chimeLayers.forEach(layer => {
       layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
     });
+
 
     document.removeEventListener('pointerdown', unlockAudio);
   }
@@ -128,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let wakeLock = null;
   let wakeFallback = null;
   let wakeFallbackResume = null;
+
 
 
   const prestartSelector = '#screen-timer .prestart';
@@ -167,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
+
 
 
   function clearPrestart(){
