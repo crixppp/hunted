@@ -10,10 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
     timer: qs('#screen-timer')
   };
 
+  let activeScreen = screens.home;
+
   function show(name) {
-    if (screens.timer.classList.contains('active') && name !== 'timer') endGame();
-    Object.values(screens).forEach(sc => sc.classList.remove('active'));
-    screens[name].classList.add('active');
+    if (activeScreen === screens.timer && name !== 'timer') endGame();
+    if (activeScreen === screens[name]) return;
+    activeScreen.classList.remove('active');
+    activeScreen = screens[name];
+    activeScreen.classList.add('active');
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
   }
@@ -100,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Timer
   const domCountdown=qs('#countdown'); let timerRunning=false,nextAt=0,base=30,start=0,rafId=null,panic=false,panicStart=0;
   const PANIC_AFTER=5*60*1000;
+  const prestartSelector = '#screen-timer .prestart';
 
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function adaptive(now){if(panic)return Math.max(0.4,(1-((now-panicStart)/420000))*0.6+0.4);const mins=Math.floor((now-start)/60000);return Math.max(3,base-2*mins);}
@@ -113,6 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function startGame(){gameId=Date.now();timerRunning=true;start=performance.now();schedule(start);update(gameId);}
   function endGame(){timerRunning=false;if(rafId)cancelAnimationFrame(rafId);domCountdown.classList.remove('red');document.body.classList.remove('panic');}
 
-  qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');qsa('#screen-timer .prestart').forEach(el=>el.remove());startGame();});
-  qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');qsa('#screen-timer .prestart').forEach(el=>el.remove());startGame();});
+  function clearPrestart(){
+    const prestart = qsa(prestartSelector);
+    if(prestart.length) prestart.forEach(el=>el.remove());
+  }
+
+  qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
+  qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
 });
