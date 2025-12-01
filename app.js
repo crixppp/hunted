@@ -18,6 +18,7 @@ function init(){
 
 
 
+
   let activeScreen = screens.home;
 
   function show(name) {
@@ -28,6 +29,7 @@ function init(){
 
     activeScreen.classList.add('active');
 
+
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
   }
@@ -36,12 +38,14 @@ function init(){
   // Header logo → home
 
 
+
   qs('#logoBtn')?.addEventListener('click', () => show('home'));
 
   // Quick Rules modal
   const modal = qs('#modal');
   qs('#btnQuickRules')?.addEventListener('click', () => { modal?.classList.add('show'); });
   qsa('[data-close]').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
+
 
 
 
@@ -66,10 +70,12 @@ function init(){
 
 
 
+
   qs('#btnHost')?.addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin')?.addEventListener('click', () => { resetGameState(); show('join'); });
   qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
   qs('#btnHostBack')?.addEventListener('click', () => show('home'));
+
 
 
 
@@ -78,7 +84,9 @@ function init(){
   const STEP=30, SLOTS=12;
 
 
+
   qs('#btnSpin')?.addEventListener('click', () => {
+
 
 
     if(!arrowRotor) return;
@@ -101,7 +109,9 @@ function init(){
   }
 
 
+
   qs('#btnSlotSpin')?.addEventListener('click', async ()=>{
+
 
 
     if(!slotMin||!slotSecT||!slotSecO||!btnSlotSpin||!btnSlotContinue)return;
@@ -125,9 +135,11 @@ function init(){
 
 
 
+
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
   chime.volume = 1;
+
 
 
 
@@ -149,9 +161,11 @@ function init(){
 
 
 
+
     chimeLayers.forEach(layer => {
       layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
     });
+
 
 
 
@@ -165,6 +179,8 @@ function init(){
 
 
 
+
+
     chimeLayers.forEach(layer => { layer.currentTime = 0; layer.play().catch(()=>{}); });
     if(navigator.vibrate)navigator.vibrate(50);
   }
@@ -172,8 +188,10 @@ function init(){
 
 
 
+
   qs('#btnJoinTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
   qs('#btnTimerTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
+
 
 
 
@@ -193,7 +211,9 @@ function init(){
 
 
 
+
   const prestartSelector = '#screen-timer .prestart';
+
 
 
 
@@ -206,6 +226,7 @@ function init(){
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){
     if(!timerRunning||id!==gameId)return;
+
 
 
 
@@ -242,10 +263,12 @@ function init(){
 
 
 
+
   function clearPrestart(){
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
+
 
 
 
