@@ -98,9 +98,11 @@ body.panic .countdown{animation:panicFlash .5s steps(2,end) infinite}
 /* Beep flash */
 
 
+
 .flash-overlay{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100;
   transition:opacity 60ms linear}
 body.flash-active .flash-overlay{opacity:1}
+
 
 
 

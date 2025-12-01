@@ -51,8 +51,10 @@ function wireUi(doc = document) {
   const flashOverlay = qs('.flash-overlay', body);
 
 
+
   let flashTimeout = null;
   let flashDurationMs = 800;
+
 
 
   function resetGameState() {
@@ -145,7 +147,9 @@ function wireUi(doc = document) {
   function setFlashDuration() {
     if (Number.isFinite(chime.duration) && chime.duration > 0) {
 
+
       flashDurationMs = chime.duration * 1000;
+
 
     }
   }
@@ -187,10 +191,12 @@ function wireUi(doc = document) {
     if (!flashOverlay) return;
 
 
+
     body.classList.add('flash-active');
     clearTimeout(flashTimeout);
     const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
     flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+
 
 
   }
@@ -304,7 +310,9 @@ function wireUi(doc = document) {
     body.classList.remove('panic');
 
 
+
     body.classList.remove('flash-active');
+
 
 
     releaseWakeLock();
