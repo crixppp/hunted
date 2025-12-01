@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     timer: qs('#screen-timer')
   };
 
+
   let activeScreen = screens.home;
 
   function show(name) {
@@ -21,15 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
   }
-  document.body.classList.add('home-active');
+  if (activeScreen) document.body.classList.add('home-active');
 
   // Header logo → home
-  qs('#logoBtn').addEventListener('click', () => show('home'));
+  qs('#logoBtn')?.addEventListener('click', () => show('home'));
 
   // Quick Rules modal
   const modal = qs('#modal');
-  qs('#btnQuickRules').addEventListener('click', () => { modal.classList.add('show'); });
-  qsa('[data-close]').forEach(el => el.addEventListener('click', () => modal.classList.remove('show')));
+  qs('#btnQuickRules')?.addEventListener('click', () => { modal?.classList.add('show'); });
+  qsa('[data-close]').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
 
   // Reset game state
   let assignedSeconds = null, rolledFinal = false;
@@ -43,19 +44,23 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Unable to access storage; continuing without clearing state', err);
     }
     assignedSeconds = null; rolledFinal = false;
-    slotMin.textContent = '0'; slotSecT.textContent = '0'; slotSecO.textContent = '0';
-    btnSlotSpin.disabled = false; btnSlotContinue.disabled = true;
+    if (slotMin) slotMin.textContent = '0';
+    if (slotSecT) slotSecT.textContent = '0';
+    if (slotSecO) slotSecO.textContent = '0';
+    if (btnSlotSpin) btnSlotSpin.disabled = false;
+    if (btnSlotContinue) btnSlotContinue.disabled = true;
   }
 
-  qs('#btnHost').addEventListener('click', () => { resetGameState(); show('host'); });
-  qs('#btnJoin').addEventListener('click', () => { resetGameState(); show('join'); });
-  qs('#btnJoinBack').addEventListener('click', () => show('home'));
-  qs('#btnHostBack').addEventListener('click', () => show('home'));
+  qs('#btnHost')?.addEventListener('click', () => { resetGameState(); show('host'); });
+  qs('#btnJoin')?.addEventListener('click', () => { resetGameState(); show('join'); });
+  qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
+  qs('#btnHostBack')?.addEventListener('click', () => show('home'));
 
   // Spinner
   const arrowRotor = qs('#arrowRotor'); let spinning=false, stepCount=0;
   const STEP=30, SLOTS=12;
-  qs('#btnSpin').addEventListener('click', () => {
+  qs('#btnSpin')?.addEventListener('click', () => {
+    if(!arrowRotor) return;
     if (spinning) return; spinning=true;
     stepCount = Math.round(stepCount);
     const turns = 3+Math.floor(Math.random()*4), slot=Math.floor(Math.random()*SLOTS);
@@ -67,12 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Slot spin
   function cycle(el, vals, dur, target) {
+    if(!el) return Promise.resolve();
     return new Promise(res=>{
       const end=Date.now()+dur; let i=0;
       (function tick(){ if(Date.now()>=end){el.textContent=target;res();return;}
         el.textContent=vals[i%vals.length];i++;setTimeout(tick,50);})();});
   }
-  qs('#btnSlotSpin').addEventListener('click', async ()=>{
+  qs('#btnSlotSpin')?.addEventListener('click', async ()=>{
+    if(!slotMin||!slotSecT||!slotSecO||!btnSlotSpin||!btnSlotContinue)return;
     if(rolledFinal) return;
     btnSlotSpin.disabled=true;
     assignedSeconds=Math.floor(Math.random()*121);
@@ -90,9 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
   chime.volume = 1;
+
 
 
 
@@ -114,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+
     document.removeEventListener('pointerdown', unlockAudio);
   }
   document.addEventListener('pointerdown', unlockAudio);
@@ -124,8 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if(navigator.vibrate)navigator.vibrate(50);
   }
 
+
   qs('#btnJoinTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
   qs('#btnTimerTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
+
 
   // Timer
   const domCountdown=qs('#countdown'); let timerRunning=false,nextAt=0,base=30,start=0,rafId=null,panic=false,panicStart=0;
@@ -139,7 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   const prestartSelector = '#screen-timer .prestart';
+
 
 
 
@@ -149,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){
     if(!timerRunning||id!==gameId)return;
+
 
     const now=performance.now();
     if(!panic&&now-start>=PANIC_AFTER){panic=true;panicStart=now;document.body.classList.add('panic');}
@@ -179,12 +194,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   function clearPrestart(){
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
 
 
+
   qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
   qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
+
 });
