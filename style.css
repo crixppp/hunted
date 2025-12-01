@@ -75,8 +75,10 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 
 
 
+
 .countdown{display:flex;align-items:center;justify-content:center;width:min(100%,680px);margin:0 auto;
   padding:clamp(8px,3vw,18px) clamp(12px,4vw,26px);font-size:clamp(56px,18vw,120px);line-height:1;
+
 
 
 

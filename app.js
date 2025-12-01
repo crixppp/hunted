@@ -1,5 +1,5 @@
 // Hunted — spinner on notches; wall-clock catch-up; smooth panic; 3s floor; wake lock; MP3 chime
-document.addEventListener('DOMContentLoaded', () => {
+function init(){
   const qs = (s, p=document) => p.querySelector(s);
   const qsa = (s, p=document) => Array.prototype.slice.call(p.querySelectorAll(s));
   const on = (sel, type, handler) => {
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   let activeScreen = screens.home;
 
   function show(name) {
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activeScreen = screens[name];
 
     activeScreen.classList.add('active');
+
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
   }
@@ -33,12 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Header logo → home
 
+
   qs('#logoBtn')?.addEventListener('click', () => show('home'));
 
   // Quick Rules modal
   const modal = qs('#modal');
   qs('#btnQuickRules')?.addEventListener('click', () => { modal?.classList.add('show'); });
   qsa('[data-close]').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
+
 
 
   // Reset game state
@@ -61,17 +65,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+
   qs('#btnHost')?.addEventListener('click', () => { resetGameState(); show('host'); });
   qs('#btnJoin')?.addEventListener('click', () => { resetGameState(); show('join'); });
   qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
   qs('#btnHostBack')?.addEventListener('click', () => show('home'));
 
 
+
   // Spinner
   const arrowRotor = qs('#arrowRotor'); let spinning=false, stepCount=0;
   const STEP=30, SLOTS=12;
 
+
   qs('#btnSpin')?.addEventListener('click', () => {
+
 
     if(!arrowRotor) return;
     if (spinning) return; spinning=true;
@@ -92,7 +100,9 @@ document.addEventListener('DOMContentLoaded', () => {
         el.textContent=vals[i%vals.length];i++;setTimeout(tick,50);})();});
   }
 
+
   qs('#btnSlotSpin')?.addEventListener('click', async ()=>{
+
 
     if(!slotMin||!slotSecT||!slotSecO||!btnSlotSpin||!btnSlotContinue)return;
     if(rolledFinal) return;
@@ -114,9 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
   chime.volume = 1;
+
 
 
 
@@ -136,9 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
     chimeLayers.forEach(layer => {
       layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
     });
+
 
 
 
@@ -149,14 +163,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function playChime(){
 
+
+
     chimeLayers.forEach(layer => { layer.currentTime = 0; layer.play().catch(()=>{}); });
     if(navigator.vibrate)navigator.vibrate(50);
   }
 
 
 
+
   qs('#btnJoinTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
   qs('#btnTimerTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
+
 
 
 
@@ -174,7 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   const prestartSelector = '#screen-timer .prestart';
+
 
 
 
@@ -186,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){
     if(!timerRunning||id!==gameId)return;
+
 
 
 
@@ -220,10 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
   function clearPrestart(){
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
+
 
 
 
