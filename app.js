@@ -15,15 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
     timer: qs('#screen-timer')
   };
 
-  let activeScreen = screens.home || screens.host || screens.join || screens.timer;
+
+
+  let activeScreen = screens.home;
 
   function show(name) {
-    const target = screens[name];
-    if (!target || !activeScreen) return;
     if (activeScreen === screens.timer && name !== 'timer') endGame();
-    if (activeScreen === target) return;
+    if (activeScreen === screens[name]) return;
     activeScreen.classList.remove('active');
-    activeScreen = target;
+    activeScreen = screens[name];
+
     activeScreen.classList.add('active');
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
@@ -31,12 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (activeScreen) document.body.classList.add('home-active');
 
   // Header logo → home
-  on('#logoBtn', 'click', () => show('home'));
+
+  qs('#logoBtn')?.addEventListener('click', () => show('home'));
 
   // Quick Rules modal
   const modal = qs('#modal');
-  on('#btnQuickRules', 'click', () => { if (modal) modal.classList.add('show'); });
-  qsa('[data-close]').forEach(el => el.addEventListener('click', () => { if (modal) modal.classList.remove('show'); }));
+  qs('#btnQuickRules')?.addEventListener('click', () => { modal?.classList.add('show'); });
+  qsa('[data-close]').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
+
 
   // Reset game state
   let assignedSeconds = null, rolledFinal = false;
@@ -57,15 +60,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnSlotContinue) btnSlotContinue.disabled = true;
   }
 
-  on('#btnHost', 'click', () => { resetGameState(); show('host'); });
-  on('#btnJoin', 'click', () => { resetGameState(); show('join'); });
-  on('#btnJoinBack', 'click', () => show('home'));
-  on('#btnHostBack', 'click', () => show('home'));
+
+  qs('#btnHost')?.addEventListener('click', () => { resetGameState(); show('host'); });
+  qs('#btnJoin')?.addEventListener('click', () => { resetGameState(); show('join'); });
+  qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
+  qs('#btnHostBack')?.addEventListener('click', () => show('home'));
+
 
   // Spinner
   const arrowRotor = qs('#arrowRotor'); let spinning=false, stepCount=0;
   const STEP=30, SLOTS=12;
-  on('#btnSpin', 'click', () => {
+
+  qs('#btnSpin')?.addEventListener('click', () => {
+
     if(!arrowRotor) return;
     if (spinning) return; spinning=true;
     stepCount = Math.round(stepCount);
@@ -84,7 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
       (function tick(){ if(Date.now()>=end){el.textContent=target;res();return;}
         el.textContent=vals[i%vals.length];i++;setTimeout(tick,50);})();});
   }
-  on('#btnSlotSpin', 'click', async ()=>{
+
+  qs('#btnSlotSpin')?.addEventListener('click', async ()=>{
+
     if(!slotMin||!slotSecT||!slotSecO||!btnSlotSpin||!btnSlotContinue)return;
     if(rolledFinal) return;
     btnSlotSpin.disabled=true;
@@ -99,8 +108,20 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Audio — MP3 chime (overlapping)
-  const chimeLayers = [new Audio('chime.mp3'), new Audio('chime.mp3')];
-  chimeLayers.forEach(layer => { layer.preload = 'auto'; layer.volume = 1; layer.crossOrigin = 'anonymous'; layer.playsInline = true; });
+
+
+
+
+
+
+  const chime = new Audio('chime.mp3');
+  chime.preload = 'auto';
+  chime.volume = 1;
+
+
+
+
+
 
   // Unlock audio on first user gesture so timer-driven plays aren't blocked.
   let audioPrimed = false;
@@ -112,19 +133,32 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function unlockAudio(){
-    primeChime();
+
+
+
+    chimeLayers.forEach(layer => {
+      layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
+    });
+
+
+
+
     document.removeEventListener('pointerdown', unlockAudio);
   }
   document.addEventListener('pointerdown', unlockAudio);
 
   function playChime(){
-    primeChime();
+
     chimeLayers.forEach(layer => { layer.currentTime = 0; layer.play().catch(()=>{}); });
     if(navigator.vibrate)navigator.vibrate(50);
   }
 
-  on('#btnJoinTestBeep', 'click', ()=>{ primeChime(); playChime(); });
-  on('#btnTimerTestBeep', 'click', ()=>{ primeChime(); playChime(); });
+
+
+  qs('#btnJoinTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
+  qs('#btnTimerTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
+
+
 
   // Timer
   const domCountdown=qs('#countdown'); let timerRunning=false,nextAt=0,base=30,start=0,rafId=null,panic=false,panicStart=0;
@@ -136,95 +170,66 @@ document.addEventListener('DOMContentLoaded', () => {
   let wakeFallback = null;
   let wakeFallbackResume = null;
 
+
+
+
+
+  const prestartSelector = '#screen-timer .prestart';
+
+
+
+
+
+
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function adaptive(now){if(panic)return Math.max(0.4,(1-((now-panicStart)/420000))*0.6+0.4);const mins=Math.floor((now-start)/60000);return Math.max(3,base-2*mins);}
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){
     if(!timerRunning||id!==gameId)return;
-    let now=performance.now();
+
+
+
+    const now=performance.now();
     if(!panic&&now-start>=PANIC_AFTER){panic=true;panicStart=now;document.body.classList.add('panic');}
 
-    let guard=0;
-    while(nextAt-now<=CHIME_LEAD_MS&&guard<6){
-      playChime();
-      schedule(now);
-      guard++;
-      now=performance.now();
-    }
 
-    const left=Math.max(0,nextAt-now);
-    const displayLeft=Math.max(0,left-DISPLAY_LEAD_MS);
-    const sec=Math.ceil(displayLeft/1000);
-    if(domCountdown) domCountdown.textContent=fmt(sec);
-    if(domCountdown){
-      if(sec<=10)domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
-    }
-    rafId=requestAnimationFrame(()=>update(id));
-  }
+    const left=Math.max(0,nextAt-now), displayLeft=Math.max(0,left-120), sec=Math.ceil(displayLeft/1000);domCountdown.textContent=fmt(sec);
+    if(sec<=10)domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
+    if(left<=120){playChime();schedule(now);} rafId=requestAnimationFrame(()=>update(id));}
   let gameId=null;
   async function requestWakeLock(){
-    if(!('wakeLock' in navigator)) return false;
+    if(!('wakeLock' in navigator)) return;
     try{
       wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release',()=>{wakeLock=null; if(timerRunning) keepScreenAwake();});
-      return true;
-    }catch(err){
-      wakeLock=null;
-      return false;
-    }
-  }
-  function startWakeFallback(){
-    if(wakeFallback) return;
-    wakeFallback = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAIA+AAABAAgAZGF0YQAAAAA=');
-    wakeFallback.loop = true;
-    wakeFallback.muted = true;
-    wakeFallback.playsInline = true;
-    wakeFallback.play().catch(()=>{
-      wakeFallbackResume = () => {
-        wakeFallback && wakeFallback.play().catch(()=>{});
-        document.removeEventListener('pointerdown', wakeFallbackResume);
-        wakeFallbackResume = null;
-      };
-      document.addEventListener('pointerdown', wakeFallbackResume, { once:true });
-    });
-  }
-  function stopWakeFallback(){
-    if(!wakeFallback) return;
-    if(wakeFallbackResume){
-      document.removeEventListener('pointerdown', wakeFallbackResume);
-      wakeFallbackResume = null;
-    }
-    wakeFallback.pause();
-    wakeFallback.currentTime = 0;
-    wakeFallback = null;
+      wakeLock.addEventListener('release',()=>{wakeLock=null; if(timerRunning) requestWakeLock();});
+    }catch(err){wakeLock=null;}
   }
   function releaseWakeLock(){ if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock=null; } }
-  async function keepScreenAwake(){ const locked = await requestWakeLock(); if(!locked) startWakeFallback(); }
-  function relaxScreenAwake(){ releaseWakeLock(); stopWakeFallback(); }
-  function startGame(){
-    primeChime();
-    panic=false;panicStart=0;
-    gameId=Date.now();timerRunning=true;start=performance.now();
-    schedule(start);
-    keepScreenAwake();
-    update(gameId);
-  }
-  function endGame(){
-    timerRunning=false;
-    panic=false;panicStart=0;
-    if(rafId)cancelAnimationFrame(rafId);
-    if(domCountdown) domCountdown.classList.remove('red');
-    document.body.classList.remove('panic');
-    relaxScreenAwake();
-  }
+  function startGame(){gameId=Date.now();timerRunning=true;start=performance.now();schedule(start);requestWakeLock();update(gameId);}
+  function endGame(){timerRunning=false;if(rafId)cancelAnimationFrame(rafId);domCountdown.classList.remove('red');document.body.classList.remove('panic');releaseWakeLock();}
 
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && timerRunning) keepScreenAwake(); });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && timerRunning) requestWakeLock(); });
+
 
   function clearPrestart(){
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
 
-  on('#btnSlotContinue','click',()=>{if(!rolledFinal||!domCountdown)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
-  on('#btnStart','click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
+
+
+
+
+  function clearPrestart(){
+    const prestart = qsa(prestartSelector);
+    if(prestart.length) prestart.forEach(el=>el.remove());
+  }
+
+
+
+
+  qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
+  qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
+
+
 });
