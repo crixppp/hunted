@@ -86,8 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Audio — MP3 chime (overlapping)
-  const chimeLayers = [new Audio('chime.mp3'), new Audio('chime.mp3')];
-  chimeLayers.forEach(layer => { layer.preload = 'auto'; layer.volume = 1; layer.crossOrigin = 'anonymous'; layer.playsInline = true; });
+
+
+
+
+  const chime = new Audio('chime.mp3');
+  chime.preload = 'auto';
+  chime.volume = 1;
+
+
+
 
   // Unlock audio on first user gesture so timer-driven plays aren't blocked.
   let audioPrimed = false;
@@ -99,13 +107,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function unlockAudio(){
-    primeChime();
+
+
+    chimeLayers.forEach(layer => {
+      layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
+    });
+
+
     document.removeEventListener('pointerdown', unlockAudio);
   }
   document.addEventListener('pointerdown', unlockAudio);
 
   function playChime(){
-    primeChime();
+
     chimeLayers.forEach(layer => { layer.currentTime = 0; layer.play().catch(()=>{}); });
     if(navigator.vibrate)navigator.vibrate(50);
   }
@@ -123,92 +137,53 @@ document.addEventListener('DOMContentLoaded', () => {
   let wakeFallback = null;
   let wakeFallbackResume = null;
 
+
+
+  const prestartSelector = '#screen-timer .prestart';
+
+
+
+
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function adaptive(now){if(panic)return Math.max(0.4,(1-((now-panicStart)/420000))*0.6+0.4);const mins=Math.floor((now-start)/60000);return Math.max(3,base-2*mins);}
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){
     if(!timerRunning||id!==gameId)return;
-    let now=performance.now();
+
+    const now=performance.now();
     if(!panic&&now-start>=PANIC_AFTER){panic=true;panicStart=now;document.body.classList.add('panic');}
 
-    let guard=0;
-    while(nextAt-now<=CHIME_LEAD_MS&&guard<6){
-      playChime();
-      schedule(now);
-      guard++;
-      now=performance.now();
-    }
 
-    const left=Math.max(0,nextAt-now);
-    const displayLeft=Math.max(0,left-DISPLAY_LEAD_MS);
-    const sec=Math.ceil(displayLeft/1000);
-    domCountdown.textContent=fmt(sec);
+    const left=Math.max(0,nextAt-now), displayLeft=Math.max(0,left-120), sec=Math.ceil(displayLeft/1000);domCountdown.textContent=fmt(sec);
     if(sec<=10)domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
-    rafId=requestAnimationFrame(()=>update(id));
-  }
+    if(left<=120){playChime();schedule(now);} rafId=requestAnimationFrame(()=>update(id));}
   let gameId=null;
   async function requestWakeLock(){
-    if(!('wakeLock' in navigator)) return false;
+    if(!('wakeLock' in navigator)) return;
     try{
       wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release',()=>{wakeLock=null; if(timerRunning) keepScreenAwake();});
-      return true;
-    }catch(err){
-      wakeLock=null;
-      return false;
-    }
-  }
-  function startWakeFallback(){
-    if(wakeFallback) return;
-    wakeFallback = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAIA+AAABAAgAZGF0YQAAAAA=');
-    wakeFallback.loop = true;
-    wakeFallback.muted = true;
-    wakeFallback.playsInline = true;
-    wakeFallback.play().catch(()=>{
-      wakeFallbackResume = () => {
-        wakeFallback && wakeFallback.play().catch(()=>{});
-        document.removeEventListener('pointerdown', wakeFallbackResume);
-        wakeFallbackResume = null;
-      };
-      document.addEventListener('pointerdown', wakeFallbackResume, { once:true });
-    });
-  }
-  function stopWakeFallback(){
-    if(!wakeFallback) return;
-    if(wakeFallbackResume){
-      document.removeEventListener('pointerdown', wakeFallbackResume);
-      wakeFallbackResume = null;
-    }
-    wakeFallback.pause();
-    wakeFallback.currentTime = 0;
-    wakeFallback = null;
+      wakeLock.addEventListener('release',()=>{wakeLock=null; if(timerRunning) requestWakeLock();});
+    }catch(err){wakeLock=null;}
   }
   function releaseWakeLock(){ if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock=null; } }
-  async function keepScreenAwake(){ const locked = await requestWakeLock(); if(!locked) startWakeFallback(); }
-  function relaxScreenAwake(){ releaseWakeLock(); stopWakeFallback(); }
-  function startGame(){
-    primeChime();
-    panic=false;panicStart=0;
-    gameId=Date.now();timerRunning=true;start=performance.now();
-    schedule(start);
-    keepScreenAwake();
-    update(gameId);
-  }
-  function endGame(){
-    timerRunning=false;
-    panic=false;panicStart=0;
-    if(rafId)cancelAnimationFrame(rafId);
-    domCountdown.classList.remove('red');
-    document.body.classList.remove('panic');
-    relaxScreenAwake();
-  }
+  function startGame(){gameId=Date.now();timerRunning=true;start=performance.now();schedule(start);requestWakeLock();update(gameId);}
+  function endGame(){timerRunning=false;if(rafId)cancelAnimationFrame(rafId);domCountdown.classList.remove('red');document.body.classList.remove('panic');releaseWakeLock();}
 
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && timerRunning) keepScreenAwake(); });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && timerRunning) requestWakeLock(); });
+
 
   function clearPrestart(){
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
+
+
+
+  function clearPrestart(){
+    const prestart = qsa(prestartSelector);
+    if(prestart.length) prestart.forEach(el=>el.remove());
+  }
+
 
   qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
   qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
