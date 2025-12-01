@@ -10,10 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
     timer: qs('#screen-timer')
   };
 
+  let activeScreen = screens.home;
+
   function show(name) {
-    if (screens.timer.classList.contains('active') && name !== 'timer') endGame();
-    Object.values(screens).forEach(sc => sc.classList.remove('active'));
-    screens[name].classList.add('active');
+    if (activeScreen === screens.timer && name !== 'timer') endGame();
+    if (activeScreen === screens[name]) return;
+    activeScreen.classList.remove('active');
+    activeScreen = screens[name];
+    activeScreen.classList.add('active');
     document.body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') document.body.classList.remove('playing');
   }
@@ -78,19 +82,20 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Audio — MP3 chime (overlapping)
-  const chime = new Audio('chime.mp3');
-  chime.preload = 'auto';
+  const chimeLayers = [new Audio('chime.mp3'), new Audio('chime.mp3')];
+  chimeLayers.forEach(layer => { layer.preload = 'auto'; layer.volume = 1; layer.crossOrigin = 'anonymous'; layer.playsInline = true; });
 
   // Unlock audio on first user gesture so timer-driven plays aren't blocked.
   function unlockAudio(){
-    chime.play().then(()=>{ chime.pause(); chime.currentTime = 0; }).catch(()=>{});
+    chimeLayers.forEach(layer => {
+      layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
+    });
     document.removeEventListener('pointerdown', unlockAudio);
   }
   document.addEventListener('pointerdown', unlockAudio);
 
   function playChime(){
-    chime.currentTime = 0;
-    chime.play().catch(()=>{});
+    chimeLayers.forEach(layer => { layer.currentTime = 0; layer.play().catch(()=>{}); });
     if(navigator.vibrate)navigator.vibrate(50);
   }
 
@@ -100,19 +105,85 @@ document.addEventListener('DOMContentLoaded', () => {
   // Timer
   const domCountdown=qs('#countdown'); let timerRunning=false,nextAt=0,base=30,start=0,rafId=null,panic=false,panicStart=0;
   const PANIC_AFTER=5*60*1000;
+  const DISPLAY_LEAD_MS = 220;
+  const CHIME_LEAD_MS = 220;
+  const prestartSelector = '#screen-timer .prestart';
+  let wakeLock = null;
+  let wakeFallback = null;
+  let wakeFallbackResume = null;
 
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function adaptive(now){if(panic)return Math.max(0.4,(1-((now-panicStart)/420000))*0.6+0.4);const mins=Math.floor((now-start)/60000);return Math.max(3,base-2*mins);}
   function schedule(now){nextAt=now+adaptive(now)*1000;}
-  function update(id){if(!timerRunning||id!==gameId)return;const now=performance.now();
+  function update(id){
+    if(!timerRunning||id!==gameId)return;
+    const now=performance.now();
     if(!panic&&now-start>=PANIC_AFTER){panic=true;panicStart=now;document.body.classList.add('panic');}
-    const left=Math.max(0,nextAt-now), sec=Math.ceil(left/1000);domCountdown.textContent=fmt(sec);
-    if(sec<=10)domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
-    if(left<=0){playChime();schedule(nextAt);} rafId=requestAnimationFrame(()=>update(id));}
-  let gameId=null;
-  function startGame(){gameId=Date.now();timerRunning=true;start=performance.now();schedule(start);update(gameId);}
-  function endGame(){timerRunning=false;if(rafId)cancelAnimationFrame(rafId);domCountdown.classList.remove('red');document.body.classList.remove('panic');}
 
-  qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');qsa('#screen-timer .prestart').forEach(el=>el.remove());startGame();});
-  qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');qsa('#screen-timer .prestart').forEach(el=>el.remove());startGame();});
+    let guard=0;
+    while(nextAt-now<=CHIME_LEAD_MS&&guard<4){
+      playChime();
+      schedule(now);
+      guard++;
+    }
+
+    const left=Math.max(0,nextAt-now);
+    const displayLeft=Math.max(0,left-DISPLAY_LEAD_MS);
+    const sec=Math.ceil(displayLeft/1000);
+    domCountdown.textContent=fmt(sec);
+    if(sec<=10)domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
+    rafId=requestAnimationFrame(()=>update(id));
+  }
+  let gameId=null;
+  async function requestWakeLock(){
+    if(!('wakeLock' in navigator)) return false;
+    try{
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release',()=>{wakeLock=null; if(timerRunning) keepScreenAwake();});
+      return true;
+    }catch(err){
+      wakeLock=null;
+      return false;
+    }
+  }
+  function startWakeFallback(){
+    if(wakeFallback) return;
+    wakeFallback = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAIA+AAABAAgAZGF0YQAAAAA=');
+    wakeFallback.loop = true;
+    wakeFallback.muted = true;
+    wakeFallback.playsInline = true;
+    wakeFallback.play().catch(()=>{
+      wakeFallbackResume = () => {
+        wakeFallback && wakeFallback.play().catch(()=>{});
+        document.removeEventListener('pointerdown', wakeFallbackResume);
+        wakeFallbackResume = null;
+      };
+      document.addEventListener('pointerdown', wakeFallbackResume, { once:true });
+    });
+  }
+  function stopWakeFallback(){
+    if(!wakeFallback) return;
+    if(wakeFallbackResume){
+      document.removeEventListener('pointerdown', wakeFallbackResume);
+      wakeFallbackResume = null;
+    }
+    wakeFallback.pause();
+    wakeFallback.currentTime = 0;
+    wakeFallback = null;
+  }
+  function releaseWakeLock(){ if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock=null; } }
+  async function keepScreenAwake(){ const locked = await requestWakeLock(); if(!locked) startWakeFallback(); }
+  function relaxScreenAwake(){ releaseWakeLock(); stopWakeFallback(); }
+  function startGame(){gameId=Date.now();timerRunning=true;start=performance.now();schedule(start);keepScreenAwake();update(gameId);}
+  function endGame(){timerRunning=false;if(rafId)cancelAnimationFrame(rafId);domCountdown.classList.remove('red');document.body.classList.remove('panic');relaxScreenAwake();}
+
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && timerRunning) keepScreenAwake(); });
+
+  function clearPrestart(){
+    const prestart = qsa(prestartSelector);
+    if(prestart.length) prestart.forEach(el=>el.remove());
+  }
+
+  qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
+  qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
 });
