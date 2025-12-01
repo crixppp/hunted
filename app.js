@@ -56,8 +56,10 @@ function wireUi(doc = document) {
 
 
 
+
   let flashTimeout = null;
   let flashDurationMs = 800;
+
 
 
 
@@ -149,6 +151,21 @@ function wireUi(doc = document) {
   chime.preload = 'auto';
   chime.volume = 1;
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
+  chimeLayers.forEach(layer => {
+    layer.preload = 'auto';
+    layer.volume = 1;
+    if (!layer.src) layer.src = 'chime.mp3';
+    layer.load();
+  });
+
+  function setFlashDuration() {
+    if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
+
+    const adjusted = chime.duration * 1000 - 180;
+    flashDurationMs = Math.max(320, adjusted);
+  }
+  chime.addEventListener('loadedmetadata', setFlashDuration);
+  setFlashDuration();
 
   function setFlashDuration() {
 
@@ -169,30 +186,27 @@ function wireUi(doc = document) {
   let audioPrimed = false;
   function primeChime() {
     if (audioPrimed) return;
-    chimeLayers.forEach(layer => {
+    const unlocks = chimeLayers.map(layer =>
       layer
         .play()
         .then(() => {
           layer.pause();
           layer.currentTime = 0;
-          audioPrimed = true;
+          return true;
         })
-        .catch(() => {});
+        .catch(() => false)
+    );
+
+    Promise.all(unlocks).then(results => {
+      if (results.some(Boolean)) {
+        audioPrimed = true;
+        doc.removeEventListener('pointerdown', unlockAudio);
+      }
     });
   }
 
   function unlockAudio() {
-    chimeLayers.forEach(layer => {
-      layer
-        .play()
-        .then(() => {
-          layer.pause();
-          layer.currentTime = 0;
-        })
-        .catch(() => {});
-    });
-
-    doc.removeEventListener('pointerdown', unlockAudio);
+    primeChime();
   }
 
   doc.addEventListener('pointerdown', unlockAudio);
@@ -204,10 +218,12 @@ function wireUi(doc = document) {
 
 
 
+
     body.classList.add('flash-active');
     clearTimeout(flashTimeout);
     const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
     flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+
 
 
 
@@ -309,6 +325,7 @@ function wireUi(doc = document) {
   }
 
   function startGame() {
+    primeChime();
     gameId = Date.now();
     timerRunning = true;
     start = performance.now();
@@ -327,7 +344,9 @@ function wireUi(doc = document) {
 
 
 
+
     body.classList.remove('flash-active');
+
 
 
 
