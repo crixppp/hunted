@@ -53,7 +53,7 @@ function wireUi(doc = document) {
 
 
   let flashTimeout = null;
-  let flashDurationMs = 800;
+  let flashDurationMs = 500;
 
 
 
