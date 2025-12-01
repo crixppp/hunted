@@ -22,9 +22,9 @@
       <div class="card hero">
         <img src="logo.png" alt="Hunted logo" class="home-logo" />
         <div class="actions actions-center">
-          <button id="btnHost" class="primary" type="button">Host New Game</button>
-          <button id="btnJoin" class="secondary" type="button">Join Game</button>
-          <button id="btnQuickRules" class="ghost" type="button">Quick Rules</button>
+          <button id="host" class="primary" type="button">Host New Game</button>
+          <button id="join" class="secondary" type="button">Join Game</button>
+          <button id="quickRules" class="ghost" type="button">Quick Rules</button>
         </div>
       </div>
     </section>
@@ -94,7 +94,7 @@
         <div id="countdown" class="countdown">00:30</div>
         <div class="actions prestart actions-center">
           <button id="btnTimerTestBeep" class="ghost" type="button">Test beep</button>
-          <button id="btnStart" class="primary" type="button">Start</button>
+          <button id="play" class="primary" type="button">Start</button>
         </div>
       </div>
     </section>
@@ -102,11 +102,11 @@
 
   <!-- Quick Rules Modal -->
   <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-backdrop" data-close></div>
+    <div class="modal-backdrop modal-close" data-close></div>
     <div class="modal-card" role="document">
       <header class="modal-header">
         <h3 id="modalTitle">Quick Rules</h3>
-        <button class="ghost close" data-close aria-label="Close" type="button">✕</button>
+        <button class="ghost close modal-close" data-close aria-label="Close" type="button">✕</button>
       </header>
       <div class="modal-body">
         <ol>
