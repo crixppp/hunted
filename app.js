@@ -84,27 +84,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // Audio — MP3 chime (overlapping)
 
 
+
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
   chime.volume = 1;
 
 
+
   // Unlock audio on first user gesture so timer-driven plays aren't blocked.
+  let audioPrimed = false;
+  function primeChime(){
+    if(audioPrimed) return;
+    chimeLayers.forEach(layer => {
+      layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; audioPrimed = true; }).catch(()=>{});
+    });
+  }
+
   function unlockAudio(){
+
     chimeLayers.forEach(layer => {
       layer.play().then(()=>{ layer.pause(); layer.currentTime = 0; }).catch(()=>{});
     });
+
     document.removeEventListener('pointerdown', unlockAudio);
   }
   document.addEventListener('pointerdown', unlockAudio);
 
   function playChime(){
+
     chimeLayers.forEach(layer => { layer.currentTime = 0; layer.play().catch(()=>{}); });
     if(navigator.vibrate)navigator.vibrate(50);
   }
 
-  qs('#btnJoinTestBeep').addEventListener('click', playChime);
-  qs('#btnTimerTestBeep').addEventListener('click', playChime);
+  qs('#btnJoinTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
+  qs('#btnTimerTestBeep').addEventListener('click', ()=>{ primeChime(); playChime(); });
 
   // Timer
   const domCountdown=qs('#countdown'); let timerRunning=false,nextAt=0,base=30,start=0,rafId=null,panic=false,panicStart=0;
@@ -116,7 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let wakeFallback = null;
   let wakeFallbackResume = null;
 
+
   const prestartSelector = '#screen-timer .prestart';
+
 
 
 
@@ -125,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function schedule(now){nextAt=now+adaptive(now)*1000;}
   function update(id){
     if(!timerRunning||id!==gameId)return;
+
     const now=performance.now();
     if(!panic&&now-start>=PANIC_AFTER){panic=true;panicStart=now;document.body.classList.add('panic');}
 
