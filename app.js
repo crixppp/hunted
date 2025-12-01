@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const domCountdown=qs('#countdown'); let timerRunning=false,nextAt=0,base=30,start=0,rafId=null,panic=false,panicStart=0;
   const PANIC_AFTER=5*60*1000;
   const prestartSelector = '#screen-timer .prestart';
-  let wakeLock = null;
+
 
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function adaptive(now){if(panic)return Math.max(0.4,(1-((now-panicStart)/420000))*0.6+0.4);const mins=Math.floor((now-start)/60000);return Math.max(3,base-2*mins);}
@@ -134,6 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const prestart = qsa(prestartSelector);
     if(prestart.length) prestart.forEach(el=>el.remove());
   }
+
+
+  function clearPrestart(){
+    const prestart = qsa(prestartSelector);
+    if(prestart.length) prestart.forEach(el=>el.remove());
+  }
+
 
   qs('#btnSlotContinue').addEventListener('click',()=>{if(!rolledFinal)return;base=assignedSeconds;domCountdown.textContent=fmt(base);show('timer');document.body.classList.add('playing');clearPrestart();startGame();});
   qs('#btnStart').addEventListener('click',()=>{document.body.classList.add('playing');clearPrestart();startGame();});
