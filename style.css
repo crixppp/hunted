@@ -96,10 +96,13 @@ body.playing .countdown{font-size:clamp(56px,20vw,140px);border-width:2px;backgr
 body.panic .countdown{animation:panicFlash .5s steps(2,end) infinite}
 
 /* Beep flash */
-@keyframes beepFlash{0%{opacity:0}12%{opacity:1}76%{opacity:1}100%{opacity:0}}
+
+
 .flash-overlay{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100;
-  --flash-duration:600ms}
-.flash-overlay.flash-active{animation:beepFlash var(--flash-duration) cubic-bezier(.45,.03,.25,1) forwards}
+  transition:opacity 60ms linear}
+body.flash-active .flash-overlay{opacity:1}
+
+
 
 /* Modal */
 .modal{position:fixed;inset:0;display:none;z-index:50}

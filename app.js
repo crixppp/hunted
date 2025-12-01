@@ -49,11 +49,11 @@ function wireUi(doc = document) {
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
-  let flashDurationMs = 600;
 
-  flashOverlay?.addEventListener('animationend', () => {
-    flashOverlay.classList.remove('flash-active');
-  });
+
+  let flashTimeout = null;
+  let flashDurationMs = 800;
+
 
   function resetGameState() {
     try {
@@ -144,8 +144,9 @@ function wireUi(doc = document) {
 
   function setFlashDuration() {
     if (Number.isFinite(chime.duration) && chime.duration > 0) {
-      const adjusted = chime.duration * 1000 - 500;
-      flashDurationMs = Math.max(200, adjusted);
+
+      flashDurationMs = chime.duration * 1000;
+
     }
   }
   chime.addEventListener('loadedmetadata', setFlashDuration);
@@ -184,12 +185,14 @@ function wireUi(doc = document) {
 
   function flashForBeep() {
     if (!flashOverlay) return;
+
+
+    body.classList.add('flash-active');
+    clearTimeout(flashTimeout);
     const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
-    flashOverlay.style.setProperty('--flash-duration', `${duration}ms`);
-    flashOverlay.classList.remove('flash-active');
-    // force reflow so the animation restarts even if beeps are close together
-    void flashOverlay.offsetWidth;
-    flashOverlay.classList.add('flash-active');
+    flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+
+
   }
 
   function playChime() {
@@ -299,7 +302,11 @@ function wireUi(doc = document) {
     if (rafId) cancelAnimationFrame(rafId);
     domCountdown.classList.remove('red');
     body.classList.remove('panic');
-    flashOverlay?.classList.remove('flash-active');
+
+
+    body.classList.remove('flash-active');
+
+
     releaseWakeLock();
   }
 
