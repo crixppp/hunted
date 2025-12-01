@@ -83,9 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Audio — MP3 chime (overlapping)
 
+
   const chime = new Audio('chime.mp3');
   chime.preload = 'auto';
   chime.volume = 1;
+
 
   // Unlock audio on first user gesture so timer-driven plays aren't blocked.
   function unlockAudio(){
@@ -107,6 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Timer
   const domCountdown=qs('#countdown'); let timerRunning=false,nextAt=0,base=30,start=0,rafId=null,panic=false,panicStart=0;
   const PANIC_AFTER=5*60*1000;
+  const DISPLAY_LEAD_MS = 220;
+  const CHIME_LEAD_MS = 220;
+  const prestartSelector = '#screen-timer .prestart';
+  let wakeLock = null;
+  let wakeFallback = null;
+  let wakeFallbackResume = null;
 
   const prestartSelector = '#screen-timer .prestart';
 
@@ -115,8 +123,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
   function adaptive(now){if(panic)return Math.max(0.4,(1-((now-panicStart)/420000))*0.6+0.4);const mins=Math.floor((now-start)/60000);return Math.max(3,base-2*mins);}
   function schedule(now){nextAt=now+adaptive(now)*1000;}
-  function update(id){if(!timerRunning||id!==gameId)return;const now=performance.now();
+  function update(id){
+    if(!timerRunning||id!==gameId)return;
+    const now=performance.now();
     if(!panic&&now-start>=PANIC_AFTER){panic=true;panicStart=now;document.body.classList.add('panic');}
+
 
     const left=Math.max(0,nextAt-now), displayLeft=Math.max(0,left-120), sec=Math.ceil(displayLeft/1000);domCountdown.textContent=fmt(sec);
     if(sec<=10)domCountdown.classList.add('red'); else domCountdown.classList.remove('red');
