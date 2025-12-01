@@ -50,6 +50,7 @@ function wireUi(doc = document) {
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
 
+
   let flashTimeout = null;
   let flashDurationMs = 800;
 
@@ -143,7 +144,9 @@ function wireUi(doc = document) {
 
   function setFlashDuration() {
     if (Number.isFinite(chime.duration) && chime.duration > 0) {
+
       flashDurationMs = chime.duration * 1000;
+
     }
   }
   chime.addEventListener('loadedmetadata', setFlashDuration);
@@ -183,10 +186,12 @@ function wireUi(doc = document) {
   function flashForBeep() {
     if (!flashOverlay) return;
 
+
     body.classList.add('flash-active');
     clearTimeout(flashTimeout);
     const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
     flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+
 
   }
 
@@ -298,7 +303,9 @@ function wireUi(doc = document) {
     domCountdown.classList.remove('red');
     body.classList.remove('panic');
 
+
     body.classList.remove('flash-active');
+
 
     releaseWakeLock();
   }
