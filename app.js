@@ -10,6 +10,14 @@ function wireUi(doc = document) {
   const qs = (selector, scope = doc) => scope.querySelector(selector);
   const qsa = (selector, scope = doc) => Array.from(scope.querySelectorAll(selector));
 
+  const btnEliminated = qs('#btnEliminated');
+  const slotMin = qs('#slotMin');
+  const slotSecT = qs('#slotSecT');
+  const slotSecO = qs('#slotSecO');
+  const btnSlotSpin = qs('#btnSlotSpin');
+  const btnSlotContinue = qs('#btnSlotContinue');
+  const flashOverlay = qs('.flash-overlay', body);
+
   const screens = {
     home: qs('#screen-home'),
     host: qs('#screen-host'),
@@ -32,7 +40,7 @@ function wireUi(doc = document) {
     body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') body.classList.remove('playing');
     body.classList.toggle('timer-active', name === 'timer');
-    if (name !== 'timer') resetEliminateHold();
+    if (name !== 'timer') resetEliminationState();
   }
 
   if (activeScreen) body.classList.add('home-active');
@@ -43,18 +51,25 @@ function wireUi(doc = document) {
   qs('#btnQuickRules, #quickRules')?.addEventListener('click', () => modal?.classList.add('show'));
   qsa('[data-close], .modal-close').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
 
+  btnEliminated?.addEventListener('click', () => {
+    if (activeScreen === screens.timer) endGame();
+    show('home');
+  });
+
+  resetEliminationState();
+
   let assignedSeconds = null;
   let rolledFinal = false;
-  const slotMin = qs('#slotMin');
-  const slotSecT = qs('#slotSecT');
-  const slotSecO = qs('#slotSecO');
-  const btnSlotSpin = qs('#btnSlotSpin');
-  const btnSlotContinue = qs('#btnSlotContinue');
-  const flashOverlay = qs('.flash-overlay', body);
 
-  
   let flashTimeout = null;
   let flashDurationMs = 800;
+
+  function resetEliminationState() {
+    if (btnEliminated) {
+      btnEliminated.classList.remove('holding');
+      btnEliminated.style.setProperty('--fill', '0%');
+    }
+  }
 
   function resetGameState() {
     try {
@@ -138,14 +153,14 @@ function wireUi(doc = document) {
     btnSlotContinue.disabled = false;
   });
 
-  const chime = new Audio('chime.mp3');
+  const chime = new Audio('chime.MP3');
   chime.preload = 'auto';
   chime.volume = 1;
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
   chimeLayers.forEach(layer => {
     layer.preload = 'auto';
     layer.volume = 1;
-    if (!layer.src) layer.src = 'chime.mp3';
+    if (!layer.src) layer.src = 'chime.MP3';
     layer.load();
   });
 
@@ -154,24 +169,6 @@ function wireUi(doc = document) {
 
     const adjusted = chime.duration * 1000 - 180;
     flashDurationMs = Math.max(320, adjusted);
-  }
-  chime.addEventListener('loadedmetadata', setFlashDuration);
-  setFlashDuration();
-
-
-
-  function setFlashDuration() {
-
-
-    if (Number.isFinite(chime.duration) && chime.duration > 0) {
-
-
-      flashDurationMs = chime.duration * 1000;
-
-
-    }
-
-
   }
   chime.addEventListener('loadedmetadata', setFlashDuration);
   setFlashDuration();
