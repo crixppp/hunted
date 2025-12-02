@@ -8,6 +8,15 @@ html,body{height:100%}
 body.dark{margin:0;background:radial-gradient(1200px 800px at 20% -10%,#151924,#0f1115);
   color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial}
 
+/* Maintenance banner */
+.maintenance-banner{position:sticky;top:0;z-index:220;display:none;gap:10px;align-items:center;justify-content:space-between;
+  padding:10px 14px;background:linear-gradient(90deg,rgba(110,168,254,.18),rgba(255,210,122,.18));
+  border-bottom:1px solid #24304a;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.maintenance-banner.visible{display:flex}
+.maintenance-banner .maintenance-text{display:flex;flex-direction:column;gap:2px;font-weight:600;color:var(--text)}
+.maintenance-banner .maintenance-title{font-size:14px;text-transform:uppercase;letter-spacing:.6px}
+.maintenance-banner .maintenance-subtitle{font-size:13px;color:var(--muted)}
+
 /* Header */
 .app-header{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #1e2330;
   background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0))}
