@@ -51,12 +51,12 @@ function wireUi(doc = document) {
   qs('#btnQuickRules, #quickRules')?.addEventListener('click', () => modal?.classList.add('show'));
   qsa('[data-close], .modal-close').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
 
-  btnEliminated?.addEventListener('click', () => {
-    if (activeScreen === screens.timer) endGame();
-    show('home');
-  });
+  btnEliminated?.addEventListener('pointerdown', startEliminateHold);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(eventName =>
+    btnEliminated?.addEventListener(eventName, cancelEliminateHold)
+  );
 
-  resetEliminationState();
+  resetEliminateHold();
 
   let assignedSeconds = null;
   let rolledFinal = false;
@@ -64,11 +64,46 @@ function wireUi(doc = document) {
   let flashTimeout = null;
   let flashDurationMs = 800;
 
-  function resetEliminationState() {
+  const ELIMINATE_HOLD_MS = 1600;
+  let eliminateRaf = null;
+  let eliminateStart = 0;
+
+  function resetEliminateHold() {
+    if (eliminateRaf) cancelAnimationFrame(eliminateRaf);
+    eliminateRaf = null;
+    eliminateStart = 0;
     if (btnEliminated) {
       btnEliminated.classList.remove('holding');
       btnEliminated.style.setProperty('--fill', '0%');
     }
+  }
+
+  function completeElimination() {
+    resetEliminateHold();
+    show('home');
+  }
+
+  function updateEliminateHold() {
+    if (!eliminateStart || !btnEliminated) return;
+    const progress = Math.min(1, (performance.now() - eliminateStart) / ELIMINATE_HOLD_MS);
+    btnEliminated.style.setProperty('--fill', `${Math.round(progress * 100)}%`);
+    if (progress >= 1) {
+      completeElimination();
+      return;
+    }
+    eliminateRaf = requestAnimationFrame(updateEliminateHold);
+  }
+
+  function startEliminateHold(event) {
+    event.preventDefault();
+    resetEliminateHold();
+    eliminateStart = performance.now();
+    if (btnEliminated) btnEliminated.classList.add('holding');
+    updateEliminateHold();
+  }
+
+  function cancelEliminateHold() {
+    resetEliminateHold();
   }
 
   function resetGameState() {
