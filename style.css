@@ -71,19 +71,8 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 .timer-card{padding:24px}
 
 
-
-
-
-
-
-
 .countdown{display:flex;align-items:center;justify-content:center;width:min(100%,680px);margin:0 auto;
   padding:clamp(8px,3vw,18px) clamp(12px,4vw,26px);font-size:clamp(56px,18vw,120px);line-height:1;
-
-
-
-
-
 
   letter-spacing:2px;font-variant-numeric:tabular-nums;border-radius:14px;border:2px solid #242b3b;
   background:linear-gradient(180deg,rgba(255,255,255,.02),transparent)}
@@ -92,8 +81,6 @@ body.playing .countdown{font-size:clamp(56px,20vw,140px);border-width:2px;backgr
 @media (max-width:380px){.countdown{font-size:clamp(48px,22vw,110px)}}
 
 /* Eliminated button */
-
-
 
 .eliminated-btn{--fill:0%;position:fixed;right:14px;bottom:18px;z-index:140;display:none;align-items:center;gap:8px;
   background:linear-gradient(90deg,rgba(255,255,255,.38) var(--fill),rgba(255,255,255,0) var(--fill)), var(--danger);
@@ -104,32 +91,15 @@ body.playing .countdown{font-size:clamp(56px,20vw,140px);border-width:2px;backgr
 .eliminated-btn:focus-visible{outline:2px solid #ffe0e0;outline-offset:2px}
 body.timer-active .eliminated-btn{display:flex}
 
-
-
-
 /* Panic mode flash */
 @keyframes panicFlash{0%{color:var(--danger)}50%{color:#ffc2c2}100%{color:var(--danger)}}
 body.panic .countdown{animation:panicFlash .5s steps(2,end) infinite}
 
 /* Beep flash */
 
-
-
-
-
-
-
-
-
 .flash-overlay{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100;
   transition:opacity 60ms linear}
 body.flash-active .flash-overlay{opacity:1}
-
-
-
-
-
-
 
 
 /* Modal */

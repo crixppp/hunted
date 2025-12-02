@@ -51,25 +51,9 @@ function wireUi(doc = document) {
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
-
-
-
-
-
-
-
-
-
+  
   let flashTimeout = null;
   let flashDurationMs = 800;
-
-
-
-
-
-
-
-
 
   function resetGameState() {
     try {
@@ -174,8 +158,6 @@ function wireUi(doc = document) {
   setFlashDuration();
 
 
-
-
   function setFlashDuration() {
 
 
@@ -191,8 +173,6 @@ function wireUi(doc = document) {
   }
   chime.addEventListener('loadedmetadata', setFlashDuration);
   setFlashDuration();
-
-
 
 
   let audioPrimed = false;
@@ -226,25 +206,10 @@ function wireUi(doc = document) {
   function flashForBeep() {
     if (!flashOverlay) return;
 
-
-
-
-
-
-
-
-
     body.classList.add('flash-active');
     clearTimeout(flashTimeout);
     const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
     flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
-
-
-
-
-
-
-
 
 
   }
@@ -359,21 +324,7 @@ function wireUi(doc = document) {
     body.classList.remove('panic');
 
 
-
-
-
-
-
-
-
     body.classList.remove('flash-active');
-
-
-
-
-
-
-
 
 
     releaseWakeLock();
