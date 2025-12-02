@@ -40,7 +40,7 @@ function wireUi(doc = document) {
     body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') body.classList.remove('playing');
     body.classList.toggle('timer-active', name === 'timer');
-    if (name !== 'timer') resetEliminateHold();
+    if (name !== 'timer') resetEliminationState();
   }
 
   if (activeScreen) body.classList.add('home-active');
