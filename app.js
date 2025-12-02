@@ -31,6 +31,8 @@ function wireUi(doc = document) {
 
     body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') body.classList.remove('playing');
+    body.classList.toggle('timer-active', name === 'timer');
+    if (name !== 'timer') resetEliminateHold();
   }
 
   if (activeScreen) body.classList.add('home-active');
@@ -48,6 +50,97 @@ function wireUi(doc = document) {
   const slotSecO = qs('#slotSecO');
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
+  const flashOverlay = qs('.flash-overlay', body);
+  const eliminatedBtn = qs('#btnEliminated', body);
+  let flashDurationMs = 700;
+
+  flashOverlay?.addEventListener('animationend', () => {
+    flashOverlay.classList.remove('flash-active');
+  });
+
+  const ELIMINATE_HOLD_MS = 1000;
+  let eliminateHoldId = null;
+  let eliminateHoldStart = 0;
+  let eliminatedTriggered = false;
+  let eliminateHoldTimer = null;
+  let eliminatePointerId = null;
+
+  function resetEliminateHold(fullReset = true) {
+    if (!eliminatedBtn) return;
+    if (eliminateHoldId) cancelAnimationFrame(eliminateHoldId);
+    if (eliminateHoldTimer) clearTimeout(eliminateHoldTimer);
+    eliminateHoldId = null;
+    eliminateHoldTimer = null;
+    eliminateHoldStart = 0;
+    eliminatePointerId = null;
+    if (fullReset) eliminatedTriggered = false;
+    eliminatedBtn.style.setProperty('--fill', '0%');
+    eliminatedBtn.classList.remove('holding');
+  }
+
+  function triggerEliminated() {
+    if (eliminatedTriggered) return;
+    eliminatedTriggered = true;
+    resetEliminateHold(false);
+    eliminatedBtn?.style.setProperty('--fill', '100%');
+    show('home');
+  }
+
+  function updateEliminateProgress(now = performance.now()) {
+    if (!eliminateHoldStart) return;
+    const progress = Math.min(1, (now - eliminateHoldStart) / ELIMINATE_HOLD_MS);
+    eliminatedBtn.style.setProperty('--fill', `${progress * 100}%`);
+    if (progress < 1) {
+      eliminateHoldId = requestAnimationFrame(updateEliminateProgress);
+    }
+  }
+
+  function startEliminateHold(event) {
+    if (!eliminatedBtn) return;
+    if (event.pointerType === 'touch' && event.touches?.length > 1) return;
+    resetEliminateHold(false);
+    eliminateHoldStart = performance.now();
+    eliminatePointerId = event.pointerId ?? null;
+    if (eliminatePointerId && eliminatedBtn.setPointerCapture) {
+      try {
+        eliminatedBtn.setPointerCapture(eliminatePointerId);
+      } catch (_) {
+        eliminatePointerId = null;
+      }
+    }
+    eliminatedBtn.classList.add('holding');
+    eliminatedBtn.style.setProperty('--fill', '0%');
+    eliminateHoldId = requestAnimationFrame(updateEliminateProgress);
+    eliminateHoldTimer = setTimeout(triggerEliminated, ELIMINATE_HOLD_MS);
+  }
+
+  function finishEliminateHold(event) {
+    if (!eliminateHoldStart) return;
+    if (eliminatePointerId && eliminatedBtn.releasePointerCapture) {
+      try {
+        eliminatedBtn.releasePointerCapture(eliminatePointerId);
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    resetEliminateHold(false);
+    if (!eliminatedTriggered && event?.type !== 'pointerleave') {
+      // Treat any release before the timeout as a click-style exit
+      triggerEliminated();
+    }
+  }
+
+  if (eliminatedBtn) {
+    eliminatedBtn.addEventListener('pointerdown', startEliminateHold, { passive: true });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(evt => {
+      eliminatedBtn.addEventListener(evt, finishEliminateHold, { passive: true });
+    });
+    eliminatedBtn.addEventListener('click', event => {
+      if (eliminateHoldTimer) return; // hold already in progress; pointerup will handle
+      event.preventDefault();
+      triggerEliminated();
+    });
+  }
 
   function resetGameState() {
     try {
@@ -135,43 +228,67 @@ function wireUi(doc = document) {
   chime.preload = 'auto';
   chime.volume = 1;
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
+  chimeLayers.forEach(layer => {
+    layer.preload = 'auto';
+    layer.volume = 1;
+    if (!layer.src) layer.src = 'chime.mp3';
+    layer.load();
+  });
+
+  function setFlashDuration() {
+    if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
+
+    const adjusted = chime.duration * 1000 - 180;
+    flashDurationMs = Math.max(320, adjusted);
+  }
+  chime.addEventListener('loadedmetadata', setFlashDuration);
+  setFlashDuration();
 
   let audioPrimed = false;
   function primeChime() {
     if (audioPrimed) return;
-    chimeLayers.forEach(layer => {
+    const unlocks = chimeLayers.map(layer =>
       layer
         .play()
         .then(() => {
           layer.pause();
           layer.currentTime = 0;
-          audioPrimed = true;
+          return true;
         })
-        .catch(() => {});
+        .catch(() => false)
+    );
+
+    Promise.all(unlocks).then(results => {
+      if (results.some(Boolean)) {
+        audioPrimed = true;
+        doc.removeEventListener('pointerdown', unlockAudio);
+      }
     });
   }
 
   function unlockAudio() {
-    chimeLayers.forEach(layer => {
-      layer
-        .play()
-        .then(() => {
-          layer.pause();
-          layer.currentTime = 0;
-        })
-        .catch(() => {});
-    });
-
-    doc.removeEventListener('pointerdown', unlockAudio);
+    primeChime();
   }
 
   doc.addEventListener('pointerdown', unlockAudio);
+
+  function flashForBeep() {
+    if (!flashOverlay) return;
+    setFlashDuration();
+    const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
+    flashOverlay.style.setProperty('--flash-duration', `${duration}ms`);
+    flashOverlay.classList.remove('flash-active');
+    // force reflow so the animation restarts even if beeps are close together
+    void flashOverlay.offsetWidth;
+    flashOverlay.classList.add('flash-active');
+  }
 
   function playChime() {
     chimeLayers.forEach(layer => {
       layer.currentTime = 0;
       layer.play().catch(() => {});
     });
+    flashForBeep();
     if (navigator.vibrate) navigator.vibrate(50);
   }
 
@@ -260,6 +377,7 @@ function wireUi(doc = document) {
   }
 
   function startGame() {
+    primeChime();
     gameId = Date.now();
     timerRunning = true;
     start = performance.now();
@@ -273,6 +391,7 @@ function wireUi(doc = document) {
     if (rafId) cancelAnimationFrame(rafId);
     domCountdown.classList.remove('red');
     body.classList.remove('panic');
+    flashOverlay?.classList.remove('flash-active');
     releaseWakeLock();
   }
 
