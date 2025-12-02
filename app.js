@@ -9,6 +9,17 @@ function wireUi(doc = document) {
 
   const qs = (selector, scope = doc) => scope.querySelector(selector);
   const qsa = (selector, scope = doc) => Array.from(scope.querySelectorAll(selector));
+  const onClickAll = (selector, handler) => {
+    qsa(selector).forEach(el => el.addEventListener('click', handler));
+  };
+
+  const btnEliminated = qs('#btnEliminated');
+  const slotMin = qs('#slotMin');
+  const slotSecT = qs('#slotSecT');
+  const slotSecO = qs('#slotSecO');
+  const btnSlotSpin = qs('#btnSlotSpin');
+  const btnSlotContinue = qs('#btnSlotContinue');
+  const flashOverlay = qs('.flash-overlay', body);
 
   const btnEliminated = qs('#btnEliminated');
   const slotMin = qs('#slotMin');
@@ -45,11 +56,18 @@ function wireUi(doc = document) {
 
   if (activeScreen) body.classList.add('home-active');
 
-  qs('#logoBtn')?.addEventListener('click', () => show('home'));
+  onClickAll('#logoBtn', () => show('home'));
 
   const modal = qs('#modal');
-  qs('#btnQuickRules, #quickRules')?.addEventListener('click', () => modal?.classList.add('show'));
-  qsa('[data-close], .modal-close').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
+  onClickAll('#btnQuickRules, #quickRules', () => modal?.classList.add('show'));
+  onClickAll('[data-close], .modal-close', () => modal?.classList.remove('show'));
+
+  btnEliminated?.addEventListener('click', () => {
+    if (activeScreen === screens.timer) endGame();
+    show('home');
+  });
+
+  resetEliminationState();
 
   btnEliminated?.addEventListener('pointerdown', startEliminateHold);
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(eventName =>
@@ -121,16 +139,16 @@ function wireUi(doc = document) {
     if (btnSlotContinue) btnSlotContinue.disabled = true;
   }
 
-  qs('#host, #btnHost')?.addEventListener('click', () => {
+  onClickAll('#host, #btnHost', () => {
     resetGameState();
     show('host');
   });
-  qs('#join, #btnJoin')?.addEventListener('click', () => {
+  onClickAll('#join, #btnJoin', () => {
     resetGameState();
     show('join');
   });
-  qs('#btnJoinBack')?.addEventListener('click', () => show('home'));
-  qs('#btnHostBack')?.addEventListener('click', () => show('home'));
+  onClickAll('#btnJoinBack', () => show('home'));
+  onClickAll('#btnHostBack', () => show('home'));
 
   const arrowRotor = qs('#arrowRotor');
   let spinning = false;
@@ -376,7 +394,7 @@ function wireUi(doc = document) {
     if (prestart.length) prestart.forEach(el => el.remove());
   }
 
-  qs('#btnSlotContinue')?.addEventListener('click', () => {
+  onClickAll('#btnSlotContinue', () => {
     if (!rolledFinal) return;
     base = assignedSeconds;
     domCountdown.textContent = fmt(base);
@@ -386,7 +404,7 @@ function wireUi(doc = document) {
     startGame();
   });
 
-  qs('#play, #btnStart')?.addEventListener('click', () => {
+  onClickAll('#play, #btnStart', () => {
     body.classList.add('playing');
     clearPrestart();
     startGame();
