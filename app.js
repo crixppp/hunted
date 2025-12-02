@@ -31,6 +31,8 @@ function wireUi(doc = document) {
 
     body.classList.toggle('home-active', name === 'home');
     if (name !== 'timer') body.classList.remove('playing');
+    body.classList.toggle('timer-active', name === 'timer');
+    if (name !== 'timer') resetEliminateHold();
   }
 
   if (activeScreen) body.classList.add('home-active');
@@ -48,6 +50,129 @@ function wireUi(doc = document) {
   const slotSecO = qs('#slotSecO');
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
+  const flashOverlay = qs('.flash-overlay', body);
+  const eliminatedBtn = qs('#btnEliminated', body);
+  let flashDurationMs = 700;
+
+  flashOverlay?.addEventListener('animationend', () => {
+    flashOverlay.classList.remove('flash-active');
+  });
+
+  const ELIMINATE_HOLD_MS = 1000;
+  let eliminateHoldRaf = null;
+  let eliminateHoldStart = 0;
+  let eliminatedTriggered = false;
+  let eliminateHoldTimer = null;
+  let eliminateHolding = false;
+  const supportsPointer = typeof window !== 'undefined' && 'PointerEvent' in window;
+
+  function resetEliminateHold(fullReset = true) {
+    if (!eliminatedBtn) return;
+    if (eliminateHoldRaf) cancelAnimationFrame(eliminateHoldRaf);
+    if (eliminateHoldTimer) clearTimeout(eliminateHoldTimer);
+    eliminateHoldRaf = null;
+    eliminateHoldTimer = null;
+    eliminateHoldStart = 0;
+    eliminateHolding = false;
+    if (fullReset) eliminatedTriggered = false;
+    eliminatedBtn.style.setProperty('--fill', '0%');
+    eliminatedBtn.classList.remove('holding');
+  }
+
+  function completeElimination() {
+    if (eliminatedTriggered) return;
+    eliminatedTriggered = true;
+    eliminatedBtn?.style.setProperty('--fill', '100%');
+    show('home');
+    resetEliminateHold(false);
+  }
+
+  function updateEliminateProgress(now = performance.now()) {
+    if (!eliminateHolding || !eliminateHoldStart) return;
+    const progress = Math.min(1, (now - eliminateHoldStart) / ELIMINATE_HOLD_MS);
+    eliminatedBtn.style.setProperty('--fill', `${Math.round(progress * 100)}%`);
+    if (progress < 1) {
+      eliminateHoldRaf = requestAnimationFrame(updateEliminateProgress);
+    }
+  }
+
+  function startEliminateHold(event) {
+    if (!eliminatedBtn || eliminatedTriggered) return;
+    if (event.touches && event.touches.length > 1) return;
+    if (event.pointerId != null && eliminatedBtn.setPointerCapture) {
+      try {
+        eliminatedBtn.setPointerCapture(event.pointerId);
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    eliminateHolding = true;
+    eliminateHoldStart = performance.now();
+    eliminatedBtn.classList.add('holding');
+    eliminatedBtn.style.setProperty('--fill', '0%');
+    if (eliminateHoldTimer) clearTimeout(eliminateHoldTimer);
+    eliminateHoldTimer = setTimeout(completeElimination, ELIMINATE_HOLD_MS);
+    eliminateHoldRaf = requestAnimationFrame(updateEliminateProgress);
+  }
+
+  function finishEliminateHold(event) {
+    if (!eliminateHolding) return;
+    eliminateHolding = false;
+    if (event?.pointerId != null && eliminatedBtn?.releasePointerCapture) {
+      try {
+        eliminatedBtn.releasePointerCapture(event.pointerId);
+      } catch (err) {
+        /* ignore */
+      }
+    }
+    if (eliminateHoldTimer) {
+      clearTimeout(eliminateHoldTimer);
+      eliminateHoldTimer = null;
+    }
+    const elapsed = performance.now() - eliminateHoldStart;
+    if (eliminatedTriggered) {
+      resetEliminateHold(false);
+      return;
+    }
+    if (elapsed >= ELIMINATE_HOLD_MS && event?.type !== 'pointerleave' && event?.type !== 'mouseleave') {
+      completeElimination();
+    } else {
+      resetEliminateHold();
+    }
+  }
+
+  function startEliminateFlow(event) {
+    if (!eliminatedBtn) return;
+    if (eliminatedTriggered) {
+      event?.preventDefault();
+      return;
+    }
+    startEliminateHold(event);
+  }
+
+  function endEliminateFlow(event) {
+    finishEliminateHold(event);
+  }
+
+  if (eliminatedBtn) {
+    const downEvents = supportsPointer ? ['pointerdown'] : ['touchstart', 'mousedown'];
+    const upEvents = supportsPointer
+      ? ['pointerup', 'pointercancel', 'pointerleave']
+      : ['touchend', 'touchcancel', 'mouseup', 'mouseleave'];
+
+    downEvents.forEach(evt => {
+      eliminatedBtn.addEventListener(evt, startEliminateFlow, { passive: true });
+    });
+    upEvents.forEach(evt => {
+      eliminatedBtn.addEventListener(evt, endEliminateFlow, { passive: true });
+    });
+
+    eliminatedBtn.addEventListener('click', event => {
+      if (eliminateHolding) return;
+      event.preventDefault();
+      completeElimination();
+    });
+  }
 
   function resetGameState() {
     try {
@@ -135,43 +260,67 @@ function wireUi(doc = document) {
   chime.preload = 'auto';
   chime.volume = 1;
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
+  chimeLayers.forEach(layer => {
+    layer.preload = 'auto';
+    layer.volume = 1;
+    if (!layer.src) layer.src = 'chime.mp3';
+    layer.load();
+  });
+
+  function setFlashDuration() {
+    if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
+
+    const adjusted = chime.duration * 1000 - 180;
+    flashDurationMs = Math.max(320, adjusted);
+  }
+  chime.addEventListener('loadedmetadata', setFlashDuration);
+  setFlashDuration();
 
   let audioPrimed = false;
   function primeChime() {
     if (audioPrimed) return;
-    chimeLayers.forEach(layer => {
+    const unlocks = chimeLayers.map(layer =>
       layer
         .play()
         .then(() => {
           layer.pause();
           layer.currentTime = 0;
-          audioPrimed = true;
+          return true;
         })
-        .catch(() => {});
+        .catch(() => false)
+    );
+
+    Promise.all(unlocks).then(results => {
+      if (results.some(Boolean)) {
+        audioPrimed = true;
+        doc.removeEventListener('pointerdown', unlockAudio);
+      }
     });
   }
 
   function unlockAudio() {
-    chimeLayers.forEach(layer => {
-      layer
-        .play()
-        .then(() => {
-          layer.pause();
-          layer.currentTime = 0;
-        })
-        .catch(() => {});
-    });
-
-    doc.removeEventListener('pointerdown', unlockAudio);
+    primeChime();
   }
 
   doc.addEventListener('pointerdown', unlockAudio);
+
+  function flashForBeep() {
+    if (!flashOverlay) return;
+    setFlashDuration();
+    const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
+    flashOverlay.style.setProperty('--flash-duration', `${duration}ms`);
+    flashOverlay.classList.remove('flash-active');
+    // force reflow so the animation restarts even if beeps are close together
+    void flashOverlay.offsetWidth;
+    flashOverlay.classList.add('flash-active');
+  }
 
   function playChime() {
     chimeLayers.forEach(layer => {
       layer.currentTime = 0;
       layer.play().catch(() => {});
     });
+    flashForBeep();
     if (navigator.vibrate) navigator.vibrate(50);
   }
 
@@ -260,6 +409,7 @@ function wireUi(doc = document) {
   }
 
   function startGame() {
+    primeChime();
     gameId = Date.now();
     timerRunning = true;
     start = performance.now();
@@ -273,6 +423,7 @@ function wireUi(doc = document) {
     if (rafId) cancelAnimationFrame(rafId);
     domCountdown.classList.remove('red');
     body.classList.remove('panic');
+    flashOverlay?.classList.remove('flash-active');
     releaseWakeLock();
   }
 

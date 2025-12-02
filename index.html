@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Hunted</title>
   <meta name="theme-color" content="#0f1115"/>
-  <link rel="icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="stylesheet" href="style.css?v=final" />
 </head>
 <body class="dark">
@@ -15,6 +15,8 @@
       <img src="logo.png" alt="Hunted logo" class="logo" />
     </button>
   </header>
+
+  <div class="flash-overlay" aria-hidden="true"></div>
 
   <main class="container">
     <!-- Home -->
@@ -97,6 +99,16 @@
           <button id="play" class="primary" type="button">Start</button>
         </div>
       </div>
+      <div class="timer-eliminated">
+        <button
+          id="btnEliminated"
+          class="eliminated-btn"
+          type="button"
+          aria-label="Eliminated, hold to return home"
+        >
+          Eliminated
+        </button>
+      </div>
     </section>
   </main>
 
@@ -128,6 +140,6 @@
   </footer>
 
   <!-- Load the app script at the very end -->
-  <script defer src="app.js?v=mp3-3"></script>
+  <script defer src="app.js?v=elim-responsive"></script>
 </body>
 </html>
