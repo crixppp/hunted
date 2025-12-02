@@ -10,6 +10,14 @@ function wireUi(doc = document) {
   const qs = (selector, scope = doc) => scope.querySelector(selector);
   const qsa = (selector, scope = doc) => Array.from(scope.querySelectorAll(selector));
 
+  const btnEliminated = qs('#btnEliminated');
+  const slotMin = qs('#slotMin');
+  const slotSecT = qs('#slotSecT');
+  const slotSecO = qs('#slotSecO');
+  const btnSlotSpin = qs('#btnSlotSpin');
+  const btnSlotContinue = qs('#btnSlotContinue');
+  const flashOverlay = qs('.flash-overlay', body);
+
   const screens = {
     home: qs('#screen-home'),
     host: qs('#screen-host'),
@@ -43,18 +51,60 @@ function wireUi(doc = document) {
   qs('#btnQuickRules, #quickRules')?.addEventListener('click', () => modal?.classList.add('show'));
   qsa('[data-close], .modal-close').forEach(el => el.addEventListener('click', () => modal?.classList.remove('show')));
 
+  btnEliminated?.addEventListener('pointerdown', startEliminateHold);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(eventName =>
+    btnEliminated?.addEventListener(eventName, cancelEliminateHold)
+  );
+
+  resetEliminateHold();
+
   let assignedSeconds = null;
   let rolledFinal = false;
-  const slotMin = qs('#slotMin');
-  const slotSecT = qs('#slotSecT');
-  const slotSecO = qs('#slotSecO');
-  const btnSlotSpin = qs('#btnSlotSpin');
-  const btnSlotContinue = qs('#btnSlotContinue');
-  const flashOverlay = qs('.flash-overlay', body);
 
-  
   let flashTimeout = null;
   let flashDurationMs = 800;
+
+  const ELIMINATE_HOLD_MS = 1600;
+  let eliminateRaf = null;
+  let eliminateStart = 0;
+
+  function resetEliminateHold() {
+    if (eliminateRaf) cancelAnimationFrame(eliminateRaf);
+    eliminateRaf = null;
+    eliminateStart = 0;
+    if (btnEliminated) {
+      btnEliminated.classList.remove('holding');
+      btnEliminated.style.setProperty('--fill', '0%');
+    }
+  }
+
+  function completeElimination() {
+    resetEliminateHold();
+    show('home');
+  }
+
+  function updateEliminateHold() {
+    if (!eliminateStart || !btnEliminated) return;
+    const progress = Math.min(1, (performance.now() - eliminateStart) / ELIMINATE_HOLD_MS);
+    btnEliminated.style.setProperty('--fill', `${Math.round(progress * 100)}%`);
+    if (progress >= 1) {
+      completeElimination();
+      return;
+    }
+    eliminateRaf = requestAnimationFrame(updateEliminateHold);
+  }
+
+  function startEliminateHold(event) {
+    event.preventDefault();
+    resetEliminateHold();
+    eliminateStart = performance.now();
+    if (btnEliminated) btnEliminated.classList.add('holding');
+    updateEliminateHold();
+  }
+
+  function cancelEliminateHold() {
+    resetEliminateHold();
+  }
 
   function resetGameState() {
     try {
