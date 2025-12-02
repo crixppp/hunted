@@ -44,7 +44,7 @@ function wireUi(doc = document) {
     if (activeScreen === screens.timer && name !== 'timer') endGame();
     if (activeScreen === target) return;
 
-    activeScreen?.classList.remove('active');
+    if (activeScreen) activeScreen.classList.remove('active');
     activeScreen = target;
     activeScreen.classList.add('active');
 
@@ -156,7 +156,8 @@ function wireUi(doc = document) {
   const STEP = 30;
   const SLOTS = 12;
 
-  qs('#btnSpin')?.addEventListener('click', () => {
+  const btnSpin = qs('#btnSpin');
+  if (btnSpin) btnSpin.addEventListener('click', () => {
     if (!arrowRotor) return;
     if (spinning) return;
     spinning = true;
@@ -190,7 +191,8 @@ function wireUi(doc = document) {
     });
   }
 
-  qs('#btnSlotSpin')?.addEventListener('click', async () => {
+  const btnSlotSpinEl = qs('#btnSlotSpin');
+  if (btnSlotSpinEl) btnSlotSpinEl.addEventListener('click', async () => {
     if (!slotMin || !slotSecT || !slotSecO || !btnSlotSpin || !btnSlotContinue) return;
     if (rolledFinal) return;
     btnSlotSpin.disabled = true;
@@ -276,14 +278,20 @@ function wireUi(doc = document) {
     if (navigator.vibrate) navigator.vibrate(50);
   }
 
-  qs('#btnJoinTestBeep')?.addEventListener('click', () => {
-    primeChime();
-    playChime();
-  });
-  qs('#btnTimerTestBeep')?.addEventListener('click', () => {
-    primeChime();
-    playChime();
-  });
+  const btnJoinTestBeep = qs('#btnJoinTestBeep');
+  if (btnJoinTestBeep) {
+    btnJoinTestBeep.addEventListener('click', () => {
+      primeChime();
+      playChime();
+    });
+  }
+  const btnTimerTestBeep = qs('#btnTimerTestBeep');
+  if (btnTimerTestBeep) {
+    btnTimerTestBeep.addEventListener('click', () => {
+      primeChime();
+      playChime();
+    });
+  }
 
   const domCountdown = qs('#countdown');
   let timerRunning = false;
