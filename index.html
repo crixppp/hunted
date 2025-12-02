@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Hunted</title>
   <meta name="theme-color" content="#0f1115"/>
-  <link rel="icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="stylesheet" href="style.css?v=final" />
 </head>
 <body class="dark">
@@ -15,6 +15,8 @@
       <img src="logo.png" alt="Hunted logo" class="logo" />
     </button>
   </header>
+
+  <div class="flash-overlay" aria-hidden="true"></div>
 
   <main class="container">
     <!-- Home -->
@@ -96,6 +98,16 @@
           <button id="btnTimerTestBeep" class="ghost" type="button">Test beep</button>
           <button id="play" class="primary" type="button">Start</button>
         </div>
+      </div>
+      <div class="timer-eliminated">
+        <button
+          id="btnEliminated"
+          class="eliminated-btn"
+          type="button"
+          aria-label="Eliminated, hold to return home"
+        >
+          Eliminated
+        </button>
       </div>
     </section>
   </main>
