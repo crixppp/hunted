@@ -92,25 +92,45 @@ body.playing .countdown{font-size:clamp(56px,20vw,140px);border-width:2px;backgr
 @media (max-width:380px){.countdown{font-size:clamp(48px,22vw,110px)}}
 
 /* Eliminated button */
-.timer-eliminated{display:none;justify-content:center;margin:14px 0 0;position:relative;z-index:150}
-.eliminated-btn{--fill:0%;display:inline-flex;align-items:center;gap:8px;position:relative;z-index:150;
+
+
+
+.eliminated-btn{--fill:0%;position:fixed;right:14px;bottom:18px;z-index:140;display:none;align-items:center;gap:8px;
   background:linear-gradient(90deg,rgba(255,255,255,.38) var(--fill),rgba(255,255,255,0) var(--fill)), var(--danger);
-  color:#1b0505;box-shadow:0 10px 24px rgba(0,0,0,.35),0 0 0 2px rgba(0,0,0,.1);border-radius:999px;padding:12px 18px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.8px;min-width:170px;justify-content:center}
+  color:#160000;box-shadow:0 10px 24px rgba(0,0,0,.35),0 0 0 2px rgba(0,0,0,.1);border-radius:999px;padding:12px 18px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.8px}
 .eliminated-btn:active{transform:translateY(0)}
 .eliminated-btn.holding{box-shadow:0 0 0 3px rgba(255,255,255,.35),0 12px 26px rgba(0,0,0,.4)}
 .eliminated-btn:focus-visible{outline:2px solid #ffe0e0;outline-offset:2px}
-body.timer-active .timer-eliminated{display:flex}
+body.timer-active .eliminated-btn{display:flex}
+
+
+
 
 /* Panic mode flash */
 @keyframes panicFlash{0%{color:var(--danger)}50%{color:#ffc2c2}100%{color:var(--danger)}}
 body.panic .countdown{animation:panicFlash .5s steps(2,end) infinite}
 
 /* Beep flash */
-@keyframes beepFlash{0%{opacity:0}10%{opacity:1}28%{opacity:1}60%{opacity:.98}78%{opacity:.45}100%{opacity:0}}
+
+
+
+
+
+
+
+
+
 .flash-overlay{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:100;
-  --flash-duration:500ms}
-.flash-overlay.flash-active{animation:beepFlash var(--flash-duration) cubic-bezier(.36,.01,.27,.99) forwards}
+  transition:opacity 60ms linear}
+body.flash-active .flash-overlay{opacity:1}
+
+
+
+
+
+
+
 
 /* Modal */
 .modal{position:fixed;inset:0;display:none;z-index:50}
