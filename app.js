@@ -51,6 +51,7 @@ function wireUi(doc = document) {
   const btnSlotSpin = qs('#btnSlotSpin');
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
+
   
   let flashTimeout = null;
   let flashDurationMs = 800;
@@ -158,6 +159,7 @@ function wireUi(doc = document) {
   setFlashDuration();
 
 
+
   function setFlashDuration() {
 
 
@@ -205,6 +207,7 @@ function wireUi(doc = document) {
 
   function flashForBeep() {
     if (!flashOverlay) return;
+
 
     body.classList.add('flash-active');
     clearTimeout(flashTimeout);
@@ -324,7 +327,9 @@ function wireUi(doc = document) {
     body.classList.remove('panic');
 
 
+
     body.classList.remove('flash-active');
+
 
 
     releaseWakeLock();
