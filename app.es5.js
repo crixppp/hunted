@@ -376,7 +376,7 @@
         spinning = true;
         stepCount = Math.round(stepCount);
         var spinDurationMs = 2800 + Math.random() * 1200;
-        var turns = Math.floor(spinDurationMs / 600) + Math.floor(Math.random() * 2);
+        var turns = Math.floor(spinDurationMs / 700) + Math.floor(Math.random() * 2);
         var slot = Math.floor(Math.random() * SLOTS);
         stepCount += turns * SLOTS + slot;
         arrowRotor.style.transition =
@@ -387,7 +387,7 @@
           spinning = false;
           stinger.currentTime = 0;
           stinger.play().catch(function() {});
-        }, Math.round(spinDurationMs) + 100);
+        }, 3100);
       });
     }
 

@@ -162,7 +162,7 @@ function wireUi(doc = document) {
     spinning = true;
     stepCount = Math.round(stepCount);
     const spinDurationMs = 2800 + Math.random() * 1200;
-    const turns = Math.floor(spinDurationMs / 600) + Math.floor(Math.random() * 2);
+    const turns = Math.floor(spinDurationMs / 700) + Math.floor(Math.random() * 2);
     const slot = Math.floor(Math.random() * SLOTS);
     stepCount += turns * SLOTS + slot;
     arrowRotor.style.transition = `transform ${Math.round(spinDurationMs)}ms cubic-bezier(.12,.72,.12,1)`;
@@ -172,7 +172,7 @@ function wireUi(doc = document) {
       spinning = false;
       stinger.currentTime = 0;
       stinger.play().catch(() => {});
-    }, Math.round(spinDurationMs) + 100);
+    }, 3100);
   });
 
   function cycle(el, vals, dur, target) {
