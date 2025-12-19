@@ -151,6 +151,9 @@ function wireUi(doc = document) {
   let stepCount = 0;
   const STEP = 30;
   const SLOTS = 12;
+  const stinger = new Audio('horror-stinger.mp3');
+  stinger.preload = 'auto';
+  stinger.volume = 1;
 
   const btnSpin = qs('#btnSpin');
   if (btnSpin) btnSpin.addEventListener('click', () => {
@@ -166,6 +169,8 @@ function wireUi(doc = document) {
     setTimeout(() => {
       arrowRotor.style.transition = 'none';
       spinning = false;
+      stinger.currentTime = 0;
+      stinger.play().catch(() => {});
     }, 3100);
   });
 
@@ -214,6 +219,7 @@ function wireUi(doc = document) {
     if (!layer.src) layer.src = 'chime.MP3';
     layer.load();
   });
+  stinger.load();
 
   function setFlashDuration() {
     if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
