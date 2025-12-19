@@ -297,6 +297,10 @@
       }
     }
 
+    function resetEliminationState() {
+      resetEliminateHold();
+    }
+
     function completeElimination() {
       resetEliminateHold();
       show('home');
@@ -360,6 +364,9 @@
     var stepCount = 0;
     var STEP = 30;
     var SLOTS = 12;
+    var stinger = new Audio('horror-stinger.mp3');
+    stinger.preload = 'auto';
+    stinger.volume = 1;
 
     var btnSpin = qs('#btnSpin');
     if (btnSpin) {
@@ -376,6 +383,8 @@
         setTimeout(function() {
           arrowRotor.style.transition = 'none';
           spinning = false;
+          stinger.currentTime = 0;
+          stinger.play().catch(function() {});
         }, 3100);
       });
     }
@@ -428,6 +437,7 @@
       if (!layer.src) layer.src = 'chime.MP3';
       if (layer.load) layer.load();
     });
+    if (stinger.load) stinger.load();
 
     function setFlashDuration() {
       if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;

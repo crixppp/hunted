@@ -38,10 +38,9 @@ Built as a static site, deployable on **GitHub Pages**.
 
 - 🎯 **Random Hunter Spinner** → arrow always lands exactly on a notch.  
 - 🎲 **Slot-Machine Interval Roll** → dramatic spin animation, one roll per game.  
-- 🔊 **Device Beeps** → square-wave beep + vibration cue.  
+- 🔊 **Device Beeps** → layered MP3 chime + vibration cue.  
 - 🟥 **Visual Countdown** → large red warning during last 10s.  
 - 🔒 **Unpausable Timer** → once started, it runs until eliminated or game ends.  
 - 🌙 **Wake Lock** → keeps screen awake while timer runs.  
-- ⏱️ **Adaptive Interval** → every minute, beep interval decreases by 5s (never below 3s).  
-- 🚨 **Panic Mode** → if the game lasts over 5 minutes, all timers flash red and beeps escalate rapidly (1.0s → 0.75s → 0.5s).  
-- ⏳ **Catch-up Resume** → if you leave/lock your phone, on return your timer “jumps ahead” to where it should be.  
+- ⏱️ **Adaptive Interval** → every minute, beep interval decreases by 2s (never below 3s).  
+- 🚨 **Panic Mode** → after 5 minutes, countdown flashes and beep intervals ramp from 1.0s toward 0.4s.  
