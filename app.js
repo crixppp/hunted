@@ -21,14 +21,6 @@ function wireUi(doc = document) {
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
 
-  const btnEliminated = qs('#btnEliminated');
-  const slotMin = qs('#slotMin');
-  const slotSecT = qs('#slotSecT');
-  const slotSecO = qs('#slotSecO');
-  const btnSlotSpin = qs('#btnSlotSpin');
-  const btnSlotContinue = qs('#btnSlotContinue');
-  const flashOverlay = qs('.flash-overlay', body);
-
   const screens = {
     home: qs('#screen-home'),
     host: qs('#screen-host'),
@@ -96,6 +88,10 @@ function wireUi(doc = document) {
     }
   }
 
+  function resetEliminationState() {
+    resetEliminateHold();
+  }
+
   function completeElimination() {
     resetEliminateHold();
     show('home');
@@ -155,6 +151,9 @@ function wireUi(doc = document) {
   let stepCount = 0;
   const STEP = 30;
   const SLOTS = 12;
+  const stinger = new Audio('horror-stinger.mp3');
+  stinger.preload = 'auto';
+  stinger.volume = 1;
 
   const btnSpin = qs('#btnSpin');
   if (btnSpin) btnSpin.addEventListener('click', () => {
@@ -162,15 +161,18 @@ function wireUi(doc = document) {
     if (spinning) return;
     spinning = true;
     stepCount = Math.round(stepCount);
-    const turns = 3 + Math.floor(Math.random() * 4);
+    const spinDurationMs = 2800 + Math.random() * 1200;
+    const turns = Math.floor(spinDurationMs / 700) + Math.floor(Math.random() * 2);
     const slot = Math.floor(Math.random() * SLOTS);
     stepCount += turns * SLOTS + slot;
-    arrowRotor.style.transition = 'transform 3s cubic-bezier(.12,.72,.12,1)';
+    arrowRotor.style.transition = `transform ${Math.round(spinDurationMs)}ms cubic-bezier(.12,.72,.12,1)`;
     arrowRotor.style.transform = `translate(-50%,-50%) rotate(${stepCount * STEP}deg)`;
     setTimeout(() => {
       arrowRotor.style.transition = 'none';
       spinning = false;
-    }, 3100);
+      stinger.currentTime = 0;
+      stinger.play().catch(() => {});
+    }, Math.round(spinDurationMs) + 100);
   });
 
   function cycle(el, vals, dur, target) {
@@ -218,6 +220,7 @@ function wireUi(doc = document) {
     if (!layer.src) layer.src = 'chime.MP3';
     layer.load();
   });
+  stinger.load();
 
   function setFlashDuration() {
     if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
