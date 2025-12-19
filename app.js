@@ -161,10 +161,11 @@ function wireUi(doc = document) {
     if (spinning) return;
     spinning = true;
     stepCount = Math.round(stepCount);
-    const turns = 3 + Math.floor(Math.random() * 4);
+    const spinDurationMs = 2800 + Math.random() * 1200;
+    const turns = Math.floor(spinDurationMs / 700) + Math.floor(Math.random() * 2);
     const slot = Math.floor(Math.random() * SLOTS);
     stepCount += turns * SLOTS + slot;
-    arrowRotor.style.transition = 'transform 3s cubic-bezier(.12,.72,.12,1)';
+    arrowRotor.style.transition = `transform ${Math.round(spinDurationMs)}ms cubic-bezier(.12,.72,.12,1)`;
     arrowRotor.style.transform = `translate(-50%,-50%) rotate(${stepCount * STEP}deg)`;
     setTimeout(() => {
       arrowRotor.style.transition = 'none';
