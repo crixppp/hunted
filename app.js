@@ -172,7 +172,7 @@ function wireUi(doc = document) {
       spinning = false;
       stinger.currentTime = 0;
       stinger.play().catch(() => {});
-    }, Math.round(spinDurationMs) + 100);
+    }, 3100);
   });
 
   function cycle(el, vals, dur, target) {

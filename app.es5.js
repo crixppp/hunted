@@ -387,7 +387,7 @@
           spinning = false;
           stinger.currentTime = 0;
           stinger.play().catch(function() {});
-        }, Math.round(spinDurationMs) + 100);
+        }, 3100);
       });
     }
 
