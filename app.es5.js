@@ -297,6 +297,10 @@
       }
     }
 
+    function resetEliminationState() {
+      resetEliminateHold();
+    }
+
     function completeElimination() {
       resetEliminateHold();
       show('home');
