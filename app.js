@@ -21,14 +21,6 @@ function wireUi(doc = document) {
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
 
-  const btnEliminated = qs('#btnEliminated');
-  const slotMin = qs('#slotMin');
-  const slotSecT = qs('#slotSecT');
-  const slotSecO = qs('#slotSecO');
-  const btnSlotSpin = qs('#btnSlotSpin');
-  const btnSlotContinue = qs('#btnSlotContinue');
-  const flashOverlay = qs('.flash-overlay', body);
-
   const screens = {
     home: qs('#screen-home'),
     host: qs('#screen-host'),
@@ -94,6 +86,10 @@ function wireUi(doc = document) {
       btnEliminated.classList.remove('holding');
       btnEliminated.style.setProperty('--fill', '0%');
     }
+  }
+
+  function resetEliminationState() {
+    resetEliminateHold();
   }
 
   function completeElimination() {
