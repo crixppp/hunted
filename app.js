@@ -236,16 +236,22 @@ function wireUi(doc = document) {
   let audioPrimed = false;
   function primeChime() {
     if (audioPrimed) return;
-    const unlocks = chimeLayers.map(layer =>
-      layer
+    const unlocks = chimeLayers.map(layer => {
+      const originalVolume = layer.volume;
+      layer.volume = 0;
+      return layer
         .play()
         .then(() => {
           layer.pause();
           layer.currentTime = 0;
+          layer.volume = originalVolume;
           return true;
         })
-        .catch(() => false)
-    );
+        .catch(() => {
+          layer.volume = originalVolume;
+          return false;
+        });
+    });
 
     Promise.all(unlocks).then(results => {
       if (results.some(Boolean)) {
