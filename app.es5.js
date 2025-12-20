@@ -455,14 +455,18 @@
     function primeChime() {
       if (audioPrimed) return;
       var unlocks = chimeLayers.map(function(layer) {
+        var originalVolume = layer.volume;
+        layer.volume = 0;
         return layer
           .play()
           .then(function() {
             layer.pause();
             layer.currentTime = 0;
+            layer.volume = originalVolume;
             return true;
           })
           .catch(function() {
+            layer.volume = originalVolume;
             return false;
           });
       });
