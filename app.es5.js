@@ -433,6 +433,7 @@
     chime.preload = 'auto';
     chime.volume = 1;
     var chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
+    var chimeCursor = 0;
     chimeLayers.forEach(function(layer) {
       layer.preload = 'auto';
       layer.volume = 1;
@@ -454,14 +455,18 @@
     function primeChime() {
       if (audioPrimed) return;
       var unlocks = chimeLayers.map(function(layer) {
+        var originalVolume = layer.volume;
+        layer.volume = 0;
         return layer
           .play()
           .then(function() {
             layer.pause();
             layer.currentTime = 0;
+            layer.volume = originalVolume;
             return true;
           })
           .catch(function() {
+            layer.volume = originalVolume;
             return false;
           });
       });
@@ -499,10 +504,22 @@
     }
 
     function playChime() {
-      chimeLayers.forEach(function(layer) {
-        layer.currentTime = 0;
-        layer.play().catch(function() {});
-      });
+      var layer = null;
+      var startIndex = chimeCursor % chimeLayers.length;
+      for (var i = 0; i < chimeLayers.length; i += 1) {
+        var candidate = chimeLayers[(startIndex + i) % chimeLayers.length];
+        if (candidate.paused) {
+          layer = candidate;
+          chimeCursor = (startIndex + i + 1) % chimeLayers.length;
+          break;
+        }
+      }
+      if (!layer) {
+        layer = chimeLayers[startIndex];
+        chimeCursor = (startIndex + 1) % chimeLayers.length;
+      }
+      layer.currentTime = 0;
+      layer.play().catch(function() {});
       flashForBeep();
       if (navigator.vibrate) navigator.vibrate(50);
     }

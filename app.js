@@ -214,6 +214,7 @@ function wireUi(doc = document) {
   chime.preload = 'auto';
   chime.volume = 1;
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
+  let chimeCursor = 0;
   chimeLayers.forEach(layer => {
     layer.preload = 'auto';
     layer.volume = 1;
@@ -235,16 +236,22 @@ function wireUi(doc = document) {
   let audioPrimed = false;
   function primeChime() {
     if (audioPrimed) return;
-    const unlocks = chimeLayers.map(layer =>
-      layer
+    const unlocks = chimeLayers.map(layer => {
+      const originalVolume = layer.volume;
+      layer.volume = 0;
+      return layer
         .play()
         .then(() => {
           layer.pause();
           layer.currentTime = 0;
+          layer.volume = originalVolume;
           return true;
         })
-        .catch(() => false)
-    );
+        .catch(() => {
+          layer.volume = originalVolume;
+          return false;
+        });
+    });
 
     Promise.all(unlocks).then(results => {
       if (results.some(Boolean)) {
@@ -273,10 +280,22 @@ function wireUi(doc = document) {
   }
 
   function playChime() {
-    chimeLayers.forEach(layer => {
-      layer.currentTime = 0;
-      layer.play().catch(() => {});
-    });
+    let layer = null;
+    const startIndex = chimeCursor % chimeLayers.length;
+    for (let i = 0; i < chimeLayers.length; i += 1) {
+      const candidate = chimeLayers[(startIndex + i) % chimeLayers.length];
+      if (candidate.paused) {
+        layer = candidate;
+        chimeCursor = (startIndex + i + 1) % chimeLayers.length;
+        break;
+      }
+    }
+    if (!layer) {
+      layer = chimeLayers[startIndex];
+      chimeCursor = (startIndex + 1) % chimeLayers.length;
+    }
+    layer.currentTime = 0;
+    layer.play().catch(() => {});
     flashForBeep();
     if (navigator.vibrate) navigator.vibrate(50);
   }
