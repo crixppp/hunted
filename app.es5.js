@@ -540,8 +540,10 @@
     }
 
     var domCountdown = qs('#countdown');
+    var countdownShell = qs('#countdownShell');
     var timerRunning = false;
     var nextAt = 0;
+    var lastAt = 0;
     var base = 30;
     var start = 0;
     var rafId = null;
@@ -565,6 +567,7 @@
     }
 
     function schedule(now) {
+      lastAt = now;
       nextAt = now + adaptive(now) * 1000;
     }
 
@@ -582,9 +585,17 @@
       var displayLeft = Math.max(0, left - DISPLAY_LEAD_MS);
       var chimeLeft = Math.max(0, left - CHIME_LEAD_MS);
       var sec = Math.ceil(displayLeft / 1000);
+      var interval = Math.max(1, nextAt - lastAt);
+      var progress = Math.min(1, Math.max(0, 1 - left / interval));
       domCountdown.textContent = fmt(sec);
       if (sec <= 10) domCountdown.classList.add('red');
       else domCountdown.classList.remove('red');
+      if (countdownShell) {
+        countdownShell.style.setProperty('--ring-progress', progress.toFixed(3));
+        countdownShell.style.setProperty('--ring-scale', (1 + progress * 0.04).toFixed(3));
+        if (sec <= 10) countdownShell.classList.add('intense');
+        else countdownShell.classList.remove('intense');
+      }
       if (chimeLeft <= 0) {
         playChime();
         schedule(now);
@@ -632,6 +643,11 @@
       if (rafId) cancelAnimationFrame(rafId);
       domCountdown.classList.remove('red');
       body.classList.remove('panic');
+      if (countdownShell) {
+        countdownShell.classList.remove('intense');
+        countdownShell.style.setProperty('--ring-progress', '0');
+        countdownShell.style.setProperty('--ring-scale', '1');
+      }
       body.classList.remove('flash-active');
       releaseWakeLock();
     }
