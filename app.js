@@ -316,10 +316,8 @@ function wireUi(doc = document) {
   }
 
   const domCountdown = qs('#countdown');
-  const countdownShell = qs('#countdownShell');
   let timerRunning = false;
   let nextAt = 0;
-  let lastAt = 0;
   let base = 30;
   let start = 0;
   let rafId = null;
@@ -345,7 +343,6 @@ function wireUi(doc = document) {
   }
 
   function schedule(now) {
-    lastAt = now;
     nextAt = now + adaptive(now) * 1000;
   }
 
@@ -363,16 +360,9 @@ function wireUi(doc = document) {
     const displayLeft = Math.max(0, left - DISPLAY_LEAD_MS);
     const chimeLeft = Math.max(0, left - CHIME_LEAD_MS);
     const sec = Math.ceil(displayLeft / 1000);
-    const interval = Math.max(1, nextAt - lastAt);
-    const progress = Math.min(1, Math.max(0, 1 - left / interval));
     domCountdown.textContent = fmt(sec);
     if (sec <= 10) domCountdown.classList.add('red');
     else domCountdown.classList.remove('red');
-    if (countdownShell) {
-      countdownShell.style.setProperty('--ring-progress', progress.toFixed(3));
-      countdownShell.style.setProperty('--ring-scale', (1 + progress * 0.04).toFixed(3));
-      countdownShell.classList.toggle('intense', sec <= 10);
-    }
     if (chimeLeft <= 0) {
       playChime();
       schedule(now);
@@ -415,11 +405,8 @@ function wireUi(doc = document) {
     if (rafId) cancelAnimationFrame(rafId);
     domCountdown.classList.remove('red');
     body.classList.remove('panic');
-    if (countdownShell) {
-      countdownShell.classList.remove('intense');
-      countdownShell.style.setProperty('--ring-progress', '0');
-      countdownShell.style.setProperty('--ring-scale', '1');
-    }
+
+
 
     body.classList.remove('flash-active');
 

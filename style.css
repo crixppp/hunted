@@ -79,24 +79,8 @@ button:disabled{filter:grayscale(.6) opacity(.7);cursor:not-allowed}
 /* Countdown */
 .timer-card{padding:24px}
 
-.countdown-shell{position:relative;display:grid;place-items:center;width:min(100%,680px);margin:0 auto;
-  --ring-progress:0;--ring-scale:1}
-.countdown-ring{position:absolute;left:50%;top:50%;width:calc(100% + 56px);height:calc(100% + 56px);
-  transform:translate(-50%,-50%) scale(var(--ring-scale));pointer-events:none;
-  transition:transform .2s ease,filter .2s ease}
-.countdown-ring-track{fill:none;stroke:rgba(110,168,254,.12);stroke-width:6}
-.countdown-ring-progress{fill:none;stroke:var(--ring);stroke-width:6;stroke-linecap:round;
-  stroke-dasharray:100;stroke-dashoffset:calc((1 - var(--ring-progress)) * 100);
-  transform:rotate(-90deg);transform-origin:50% 50%;
-  transition:stroke-dashoffset .12s linear,stroke .2s ease,filter .2s ease}
-.countdown-shell.intense .countdown-ring-progress{stroke:var(--danger);filter:drop-shadow(0 0 10px rgba(255,107,107,.5))}
-.countdown-shell.intense .countdown-ring{animation:ringPulse .55s ease-in-out infinite}
-@keyframes ringPulse{
-  0%{transform:translate(-50%,-50%) scale(calc(var(--ring-scale) * .98))}
-  50%{transform:translate(-50%,-50%) scale(calc(var(--ring-scale) * 1.06))}
-  100%{transform:translate(-50%,-50%) scale(calc(var(--ring-scale) * .98))}
-}
-.countdown{display:flex;align-items:center;justify-content:center;width:100%;
+
+.countdown{display:flex;align-items:center;justify-content:center;width:min(100%,680px);margin:0 auto;
   padding:clamp(8px,3vw,18px) clamp(12px,4vw,26px);font-size:clamp(56px,18vw,120px);line-height:1;
 
   letter-spacing:2px;font-variant-numeric:tabular-nums;border-radius:14px;border:2px solid #242b3b;
