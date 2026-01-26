@@ -140,6 +140,16 @@
     <small>created by Sam Gilliot</small>
   </footer>
 
+  <!-- Maintenance banner -->
+  <script defer src="maintenance-banner.js"></script>
+  <script defer>
+    document.addEventListener('DOMContentLoaded', function(){
+      if (window.MaintenanceBanner && window.MaintenanceBanner.show) {
+        window.MaintenanceBanner.show();
+      }
+    });
+  </script>
+
   <!-- Load the ES5-compatible app script at the very end -->
   <script defer src="app.es5.js"></script>
 </body>
