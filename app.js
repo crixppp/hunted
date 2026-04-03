@@ -225,10 +225,13 @@ function wireUi(doc = document) {
     btnSlotContinue.disabled = false;
   });
 
-  btnSlotThirty?.addEventListener('click', () => {
+  const chooseThirtySeconds = () => {
     if (rolledFinal) return;
     setAssignedInterval(30);
-  });
+  };
+
+  btnSlotThirty?.addEventListener('click', chooseThirtySeconds);
+  btnSlotThirty?.addEventListener('pointerup', chooseThirtySeconds);
 
   const chime = new Audio('chime.MP3');
   chime.preload = 'auto';
