@@ -56,7 +56,7 @@ function wireUi(doc = document) {
 
   btnEliminated?.addEventListener('click', () => {
     if (activeScreen === screens.timer) endGame();
-    show('home');
+    window.location.reload();
   });
 
   resetEliminationState();
@@ -94,7 +94,7 @@ function wireUi(doc = document) {
 
   function completeElimination() {
     resetEliminateHold();
-    show('home');
+    window.location.reload();
   }
 
   function updateEliminateHold() {
