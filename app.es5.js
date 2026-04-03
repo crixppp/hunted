@@ -217,6 +217,7 @@
     var slotSecT = qs('#slotSecT');
     var slotSecO = qs('#slotSecO');
     var btnSlotSpin = qs('#btnSlotSpin');
+    var btnSlotThirty = qs('#btnSlotThirty');
     var btnSlotContinue = qs('#btnSlotContinue');
     var flashOverlay = qs('.flash-overlay', body);
 
@@ -262,7 +263,7 @@
     if (btnEliminated) {
       btnEliminated.addEventListener('click', function() {
         if (activeScreen === screens.timer) endGame();
-        show('home');
+        window.location.reload();
       });
     }
 
@@ -303,7 +304,7 @@
 
     function completeElimination() {
       resetEliminateHold();
-      show('home');
+      window.location.reload();
     }
 
     function updateEliminateHold() {
@@ -341,6 +342,7 @@
       if (slotSecT) slotSecT.textContent = '0';
       if (slotSecO) slotSecO.textContent = '0';
       if (btnSlotSpin) btnSlotSpin.disabled = false;
+      if (btnSlotThirty) btnSlotThirty.disabled = false;
       if (btnSlotContinue) btnSlotContinue.disabled = true;
     }
 
@@ -409,12 +411,25 @@
       });
     }
 
+    function setAssignedInterval(totalSeconds) {
+      if (!slotMin || !slotSecT || !slotSecO || !btnSlotSpin || !btnSlotContinue) return;
+      assignedSeconds = totalSeconds;
+      rolledFinal = true;
+      btnSlotSpin.disabled = true;
+      if (btnSlotThirty) btnSlotThirty.disabled = true;
+      slotMin.textContent = Math.floor(totalSeconds / 60);
+      slotSecT.textContent = Math.floor((totalSeconds % 60) / 10);
+      slotSecO.textContent = totalSeconds % 10;
+      btnSlotContinue.disabled = false;
+    }
+
     var btnSlotSpinEl = qs('#btnSlotSpin');
     if (btnSlotSpinEl) {
       btnSlotSpinEl.addEventListener('click', function() {
         if (!slotMin || !slotSecT || !slotSecO || !btnSlotSpin || !btnSlotContinue) return;
         if (rolledFinal) return;
         btnSlotSpin.disabled = true;
+        if (btnSlotThirty) btnSlotThirty.disabled = true;
         assignedSeconds = Math.floor(Math.random() * 121);
         var m = Math.floor(assignedSeconds / 60);
         var s = assignedSeconds % 60;
@@ -426,6 +441,13 @@
           rolledFinal = true;
           btnSlotContinue.disabled = false;
         });
+      });
+    }
+
+    if (btnSlotThirty) {
+      btnSlotThirty.addEventListener('click', function() {
+        if (rolledFinal) return;
+        setAssignedInterval(30);
       });
     }
 

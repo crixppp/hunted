@@ -18,6 +18,7 @@ function wireUi(doc = document) {
   const slotSecT = qs('#slotSecT');
   const slotSecO = qs('#slotSecO');
   const btnSlotSpin = qs('#btnSlotSpin');
+  const btnSlotThirty = qs('#btnSlotThirty');
   const btnSlotContinue = qs('#btnSlotContinue');
   const flashOverlay = qs('.flash-overlay', body);
 
@@ -132,6 +133,7 @@ function wireUi(doc = document) {
     if (slotSecT) slotSecT.textContent = '0';
     if (slotSecO) slotSecO.textContent = '0';
     if (btnSlotSpin) btnSlotSpin.disabled = false;
+    if (btnSlotThirty) btnSlotThirty.disabled = false;
     if (btnSlotContinue) btnSlotContinue.disabled = true;
   }
 
@@ -193,11 +195,24 @@ function wireUi(doc = document) {
     });
   }
 
+  function setAssignedInterval(totalSeconds) {
+    if (!slotMin || !slotSecT || !slotSecO || !btnSlotSpin || !btnSlotContinue) return;
+    assignedSeconds = totalSeconds;
+    rolledFinal = true;
+    btnSlotSpin.disabled = true;
+    if (btnSlotThirty) btnSlotThirty.disabled = true;
+    slotMin.textContent = Math.floor(totalSeconds / 60);
+    slotSecT.textContent = Math.floor((totalSeconds % 60) / 10);
+    slotSecO.textContent = totalSeconds % 10;
+    btnSlotContinue.disabled = false;
+  }
+
   const btnSlotSpinEl = qs('#btnSlotSpin');
   if (btnSlotSpinEl) btnSlotSpinEl.addEventListener('click', async () => {
     if (!slotMin || !slotSecT || !slotSecO || !btnSlotSpin || !btnSlotContinue) return;
     if (rolledFinal) return;
     btnSlotSpin.disabled = true;
+    if (btnSlotThirty) btnSlotThirty.disabled = true;
     assignedSeconds = Math.floor(Math.random() * 121);
     const m = Math.floor(assignedSeconds / 60);
     const s = assignedSeconds % 60;
@@ -208,6 +223,11 @@ function wireUi(doc = document) {
     ]);
     rolledFinal = true;
     btnSlotContinue.disabled = false;
+  });
+
+  btnSlotThirty?.addEventListener('click', () => {
+    if (rolledFinal) return;
+    setAssignedInterval(30);
   });
 
   const chime = new Audio('chime.MP3');
