@@ -444,11 +444,14 @@
       });
     }
 
+    function chooseThirtySeconds() {
+      if (rolledFinal) return;
+      setAssignedInterval(30);
+    }
+
     if (btnSlotThirty) {
-      btnSlotThirty.addEventListener('click', function() {
-        if (rolledFinal) return;
-        setAssignedInterval(30);
-      });
+      btnSlotThirty.addEventListener('click', chooseThirtySeconds);
+      btnSlotThirty.addEventListener('pointerup', chooseThirtySeconds);
     }
 
     var chime = new Audio('chime.MP3');
