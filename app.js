@@ -214,6 +214,10 @@ function wireUi(doc = document) {
   chime.preload = 'auto';
   chime.volume = 1;
   const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
+  const MAX_BEEP_GAIN = 4;
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+  let chimeAudioContext = null;
+  let chimeGainNode = null;
   let chimeCursor = 0;
   chimeLayers.forEach(layer => {
     layer.preload = 'auto';
@@ -222,6 +226,25 @@ function wireUi(doc = document) {
     layer.load();
   });
   stinger.load();
+
+  function setupLoudChimeOutput() {
+    if (!AudioContextCtor || chimeAudioContext) return;
+    try {
+      chimeAudioContext = new AudioContextCtor();
+      chimeGainNode = chimeAudioContext.createGain();
+      chimeGainNode.gain.value = MAX_BEEP_GAIN;
+      chimeGainNode.connect(chimeAudioContext.destination);
+      chimeLayers.forEach(layer => {
+        const source = chimeAudioContext.createMediaElementSource(layer);
+        source.connect(chimeGainNode);
+      });
+    } catch (err) {
+      chimeAudioContext = null;
+      chimeGainNode = null;
+      console.warn('Unable to boost chime output with Web Audio', err);
+    }
+  }
+  setupLoudChimeOutput();
 
   function setFlashDuration() {
     if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
@@ -235,6 +258,9 @@ function wireUi(doc = document) {
 
   let audioPrimed = false;
   function primeChime() {
+    if (chimeAudioContext?.state === 'suspended') {
+      chimeAudioContext.resume().catch(() => {});
+    }
     if (audioPrimed) return;
     const unlocks = chimeLayers.map(layer => {
       const originalVolume = layer.volume;
@@ -295,6 +321,7 @@ function wireUi(doc = document) {
       chimeCursor = (startIndex + 1) % chimeLayers.length;
     }
     layer.currentTime = 0;
+    layer.volume = 1;
     layer.play().catch(() => {});
     flashForBeep();
     if (navigator.vibrate) navigator.vibrate(50);

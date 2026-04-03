@@ -433,6 +433,10 @@
     chime.preload = 'auto';
     chime.volume = 1;
     var chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
+    var MAX_BEEP_GAIN = 4;
+    var AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    var chimeAudioContext = null;
+    var chimeGainNode = null;
     var chimeCursor = 0;
     chimeLayers.forEach(function(layer) {
       layer.preload = 'auto';
@@ -441,6 +445,25 @@
       if (layer.load) layer.load();
     });
     if (stinger.load) stinger.load();
+
+    function setupLoudChimeOutput() {
+      if (!AudioContextCtor || chimeAudioContext) return;
+      try {
+        chimeAudioContext = new AudioContextCtor();
+        chimeGainNode = chimeAudioContext.createGain();
+        chimeGainNode.gain.value = MAX_BEEP_GAIN;
+        chimeGainNode.connect(chimeAudioContext.destination);
+        chimeLayers.forEach(function(layer) {
+          var source = chimeAudioContext.createMediaElementSource(layer);
+          source.connect(chimeGainNode);
+        });
+      } catch (err) {
+        chimeAudioContext = null;
+        chimeGainNode = null;
+        console.warn('Unable to boost chime output with Web Audio', err);
+      }
+    }
+    setupLoudChimeOutput();
 
     function setFlashDuration() {
       if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
@@ -453,6 +476,9 @@
 
     var audioPrimed = false;
     function primeChime() {
+      if (chimeAudioContext && chimeAudioContext.state === 'suspended') {
+        chimeAudioContext.resume().catch(function() {});
+      }
       if (audioPrimed) return;
       var unlocks = chimeLayers.map(function(layer) {
         var originalVolume = layer.volume;
@@ -519,6 +545,7 @@
         chimeCursor = (startIndex + 1) % chimeLayers.length;
       }
       layer.currentTime = 0;
+      layer.volume = 1;
       layer.play().catch(function() {});
       flashForBeep();
       if (navigator.vibrate) navigator.vibrate(50);
