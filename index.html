@@ -2,29 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Hunted</title>
-  <meta name="theme-color" content="#0f1115"/>
+  <meta name="theme-color" content="#0b0909" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="dark">
-  <!-- Header -->
-  <header class="app-header">
-    <button id="logoBtn" class="brand" aria-label="Go home" type="button">
-      <img src="logo.png" alt="Hunted logo" class="logo" />
-    </button>
-  </header>
-
   <div class="flash-overlay" aria-hidden="true"></div>
 
+  <header class="app-header">
+    <button id="logoBtn" class="brand" aria-label="Go home" type="button">
+      <img src="logo.png" alt="Hunted" class="logo" />
+    </button>
+    <div class="status-strip" aria-live="polite">
+      <span id="audioStatus" class="status-pill" data-state="idle">Cue not tested</span>
+      <span id="wakeStatus" class="status-pill" data-state="idle">Wake lock idle</span>
+    </div>
+  </header>
 
   <main class="container">
-    <!-- Home -->
-    <section id="screen-home" class="screen active">
+    <section id="screen-home" class="screen active" aria-labelledby="homeTitle">
       <div class="card hero">
-        <img src="logo.png" alt="Hunted logo" class="home-logo" />
-        <div class="actions actions-center">
+        <p class="eyebrow">Live phone hide-and-seek</p>
+        <img src="logo.png" alt="Hunted" class="home-logo" />
+        <h1 id="homeTitle" class="visually-hidden">Hunted</h1>
+        <div class="actions home-actions">
           <button id="host" class="primary" type="button">Host New Game</button>
           <button id="join" class="secondary" type="button">Join Game</button>
           <button id="quickRules" class="ghost" type="button">Quick Rules</button>
@@ -32,45 +35,46 @@
       </div>
     </section>
 
-    <!-- Host: spinner -->
-    <section id="screen-host" class="screen">
+    <section id="screen-host" class="screen" aria-labelledby="hostTitle">
       <div class="card">
-        <h2>Choose the Hunter</h2>
+        <div class="screen-heading">
+          <p class="eyebrow">Host</p>
+          <h2 id="hostTitle">Choose the Hunter</h2>
+        </div>
         <div class="spinner-wrap">
           <div class="spinner" aria-label="Player selector">
-            <!-- static dial -->
-            <div class="spinner-face">
+            <div class="spinner-face" aria-hidden="true">
               <div class="ring"></div>
               <div class="tick t1"></div><div class="tick t2"></div><div class="tick t3"></div><div class="tick t4"></div>
               <div class="tick t5"></div><div class="tick t6"></div><div class="tick t7"></div><div class="tick t8"></div>
               <div class="tick t9"></div><div class="tick t10"></div><div class="tick t11"></div><div class="tick t12"></div>
               <div class="centre-cap"></div>
             </div>
-            <!-- rotating arrow -->
-            <div id="arrowRotor" class="arrow-rotor">
+            <div id="arrowRotor" class="arrow-rotor" aria-hidden="true">
               <div class="arrow"></div>
             </div>
           </div>
         </div>
-        <div class="actions actions-center">
+        <div class="actions">
           <button id="btnSpin" class="primary" type="button">Spin</button>
           <button id="btnHostBack" class="ghost" type="button">Back</button>
         </div>
       </div>
     </section>
 
-    <!-- Join: slot -->
-    <section id="screen-join" class="screen">
+    <section id="screen-join" class="screen" aria-labelledby="joinTitle">
       <div class="card">
-        <h2>Set Your Interval</h2>
-        <p class="muted small">One roll only during a game. Going Home starts a new game and lets you roll again.</p>
+        <div class="screen-heading">
+          <p class="eyebrow">Prey</p>
+          <h2 id="joinTitle">Set Your Interval</h2>
+        </div>
 
-        <div class="slot-wrap">
+        <div class="slot-wrap" aria-label="Assigned interval">
           <div class="slot">
             <div class="slot-label">min</div>
             <div id="slotMin" class="slot-value">0</div>
           </div>
-          <div class="slot colon">:</div>
+          <div class="slot colon" aria-hidden="true">:</div>
           <div class="slot">
             <div class="slot-label">sec</div>
             <div class="slot-value">
@@ -79,56 +83,55 @@
           </div>
         </div>
 
-        <div class="actions actions-center">
+        <div class="actions">
           <button id="btnSlotSpin" class="primary" type="button">Spin</button>
-          <button id="btnSlotThirty" class="secondary" type="button">30 second</button>
+          <button id="btnSlotThirty" class="secondary" type="button">30 sec</button>
           <button id="btnSlotContinue" class="secondary" type="button" disabled>Continue</button>
           <button id="btnJoinBack" class="ghost" type="button">Back</button>
         </div>
 
-        <div class="actions actions-center">
-          <button id="btnJoinTestBeep" class="ghost" type="button">Test beep</button>
+        <div class="actions secondary-actions">
+          <button id="btnJoinTestBeep" class="ghost" type="button">Test Cue</button>
         </div>
       </div>
     </section>
 
-    <!-- Timer -->
-    <section id="screen-timer" class="screen">
+    <section id="screen-timer" class="screen" aria-labelledby="timerTitle">
       <div class="card timer-card">
-        <div id="countdown" class="countdown">00:30</div>
-        <div class="actions prestart actions-center">
-          <button id="btnTimerTestBeep" class="ghost" type="button">Test beep</button>
+        <p class="eyebrow">Prey Timer</p>
+        <h2 id="timerTitle" class="visually-hidden">Prey Timer</h2>
+        <div id="countdown" class="countdown" aria-live="polite">00:30</div>
+        <div id="timerStatus" class="timer-status" aria-live="polite">Ready</div>
+        <div class="actions prestart">
+          <button id="btnTimerTestBeep" class="ghost" type="button">Test Cue</button>
           <button id="play" class="primary" type="button">Start</button>
         </div>
       </div>
-      <div class="timer-eliminated">
-        <button
-          id="btnEliminated"
-          class="eliminated-btn"
-          type="button"
-          aria-label="Eliminated, hold to return home"
-        >
-          Eliminated
-        </button>
-      </div>
+      <button
+        id="btnEliminated"
+        class="eliminated-btn"
+        type="button"
+        aria-label="Hold to mark yourself eliminated and return home"
+      >
+        Hold if Eliminated
+      </button>
     </section>
   </main>
 
-  <!-- Quick Rules Modal -->
   <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-backdrop modal-close" data-close></div>
+    <div class="modal-backdrop" data-close></div>
     <div class="modal-card" role="document">
       <header class="modal-header">
         <h3 id="modalTitle">Quick Rules</h3>
-        <button class="ghost close modal-close" data-close aria-label="Close" type="button">✕</button>
+        <button class="ghost close modal-close" data-close aria-label="Close" type="button">Close</button>
       </header>
       <div class="modal-body">
         <ol>
-          <li>4+ players, confined space, walking only.</li>
-          <li>Host: <em>Host New Game → Spin</em> to pick the Hunter.</li>
-          <li>Prey: <em>Join Game → Spin</em> for a random 0:00–2:00 interval.</li>
-          <li>Press <em>Continue</em> to begin your timer automatically.</li>
-          <li>Final 10 seconds are red; the phone beeps at 0 and repeats.</li>
+          <li>Use 4 or more players in one confined space.</li>
+          <li>Host spins once to choose the Hunter.</li>
+          <li>Each Prey rolls one interval, then starts hiding.</li>
+          <li>When a phone cues, the Prey is easier to find.</li>
+          <li>Walking only. If caught, speaking, running, or touching the Hunter, you are out.</li>
         </ol>
       </div>
       <footer class="modal-footer">
@@ -141,7 +144,6 @@
     <small>created by Sam Gilliot</small>
   </footer>
 
-  <!-- Load the ES5-compatible app script at the very end -->
-  <script defer src="app.es5.js"></script>
+  <script defer src="app.js"></script>
 </body>
 </html>
