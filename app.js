@@ -1,507 +1,725 @@
-// Hunted — spinner on notches; wall-clock catch-up; smooth panic; 3s floor; wake lock; MP3 chime
+(() => {
+  'use strict';
 
-function wireUi(doc = document) {
+  const TIMER_STATE_KEY = 'hunted.timerState';
+  const TIMER_STATE_VERSION = 2;
+  const PANIC_AFTER_MS = 5 * 60 * 1000;
+  const PANIC_RAMP_MS = 7 * 60 * 1000;
+  const NORMAL_FLOOR_SECONDS = 3;
+  const PANIC_START_SECONDS = 1;
+  const PANIC_FLOOR_SECONDS = 0.4;
+  const CHIME_LEAD_MS = 140;
+  const DISPLAY_LEAD_MS = 160;
+  const HOLD_TO_ELIMINATE_MS = 1600;
+  const FALLBACK_QUERY = 'huntedFallbackAudio';
+
+  const doc = document;
   const body = doc.body;
-  if (!body) {
-    console.warn('wireUi: document.body not ready');
-    return;
-  }
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const qs = (selector, scope = doc) => scope.querySelector(selector);
   const qsa = (selector, scope = doc) => Array.from(scope.querySelectorAll(selector));
-  const onClickAll = (selector, handler) => {
-    qsa(selector).forEach(el => el.addEventListener('click', handler));
+  const byId = id => doc.getElementById(id);
+  const on = (target, eventName, handler, options) => {
+    if (target) target.addEventListener(eventName, handler, options);
   };
 
-  const btnEliminated = qs('#btnEliminated');
-  const slotMin = qs('#slotMin');
-  const slotSecT = qs('#slotSecT');
-  const slotSecO = qs('#slotSecO');
-  const btnSlotSpin = qs('#btnSlotSpin');
-  const btnSlotThirty = qs('#btnSlotThirty');
-  const btnSlotContinue = qs('#btnSlotContinue');
-  const flashOverlay = qs('.flash-overlay', body);
-
-  const screens = {
-    home: qs('#screen-home'),
-    host: qs('#screen-host'),
-    join: qs('#screen-join'),
-    timer: qs('#screen-timer')
+  const els = {
+    screens: {
+      home: byId('screen-home'),
+      host: byId('screen-host'),
+      join: byId('screen-join'),
+      timer: byId('screen-timer')
+    },
+    logoBtn: byId('logoBtn'),
+    hostBtn: byId('host'),
+    joinBtn: byId('join'),
+    hostBackBtn: byId('btnHostBack'),
+    joinBackBtn: byId('btnJoinBack'),
+    quickRulesBtn: byId('quickRules'),
+    modal: byId('modal'),
+    spinBtn: byId('btnSpin'),
+    arrowRotor: byId('arrowRotor'),
+    spinner: qs('.spinner'),
+    slotMin: byId('slotMin'),
+    slotSecT: byId('slotSecT'),
+    slotSecO: byId('slotSecO'),
+    slotSpinBtn: byId('btnSlotSpin'),
+    slotThirtyBtn: byId('btnSlotThirty'),
+    slotContinueBtn: byId('btnSlotContinue'),
+    joinTestBeepBtn: byId('btnJoinTestBeep'),
+    timerTestBeepBtn: byId('btnTimerTestBeep'),
+    startBtn: byId('play'),
+    countdown: byId('countdown'),
+    timerStatus: byId('timerStatus'),
+    audioStatus: byId('audioStatus'),
+    wakeStatus: byId('wakeStatus'),
+    eliminatedBtn: byId('btnEliminated'),
+    flashOverlay: qs('.flash-overlay')
   };
 
-  let activeScreen = screens.home;
+  const state = {
+    activeScreen: 'home',
+    assignedSeconds: null,
+    rolledFinal: false,
+    slotSpinning: false,
+    spinnerSteps: 0,
+    spinnerBusy: false,
+    timer: null,
+    timerRaf: null,
+    restoredTimer: false,
+    wakeLock: null,
+    eliminateRaf: null,
+    eliminateStartedAt: 0
+  };
 
-  function show(name) {
-    const target = screens[name];
-    if (!target) return;
-    if (activeScreen === screens.timer && name !== 'timer') endGame();
-    if (activeScreen === target) return;
-
-    if (activeScreen) activeScreen.classList.remove('active');
-    activeScreen = target;
-    activeScreen.classList.add('active');
-
-    body.classList.toggle('home-active', name === 'home');
-    if (name !== 'timer') body.classList.remove('playing');
-    body.classList.toggle('timer-active', name === 'timer');
-    if (name !== 'timer') resetEliminationState();
+  function formatSeconds(seconds) {
+    const safeSeconds = Math.max(0, Math.ceil(seconds));
+    const mins = Math.floor(safeSeconds / 60);
+    const secs = safeSeconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
 
-  if (activeScreen) body.classList.add('home-active');
-
-  onClickAll('#logoBtn', () => show('home'));
-
-  const modal = qs('#modal');
-  onClickAll('#btnQuickRules, #quickRules', () => modal?.classList.add('show'));
-  onClickAll('[data-close], .modal-close', () => modal?.classList.remove('show'));
-
-  btnEliminated?.addEventListener('click', () => {
-    if (activeScreen === screens.timer) endGame();
-    window.location.reload();
-  });
-
-  resetEliminationState();
-
-  btnEliminated?.addEventListener('pointerdown', startEliminateHold);
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(eventName =>
-    btnEliminated?.addEventListener(eventName, cancelEliminateHold)
-  );
-
-  resetEliminateHold();
-
-  let assignedSeconds = null;
-  let rolledFinal = false;
-
-  let flashTimeout = null;
-  let flashDurationMs = 800;
-
-  const ELIMINATE_HOLD_MS = 1600;
-  let eliminateRaf = null;
-  let eliminateStart = 0;
-
-  function resetEliminateHold() {
-    if (eliminateRaf) cancelAnimationFrame(eliminateRaf);
-    eliminateRaf = null;
-    eliminateStart = 0;
-    if (btnEliminated) {
-      btnEliminated.classList.remove('holding');
-      btnEliminated.style.setProperty('--fill', '0%');
-    }
+  function setStatus(el, value, mode) {
+    if (!el) return;
+    el.textContent = value;
+    if (mode) el.dataset.state = mode;
   }
 
-  function resetEliminationState() {
-    resetEliminateHold();
-  }
-
-  function completeElimination() {
-    resetEliminateHold();
-    window.location.reload();
-  }
-
-  function updateEliminateHold() {
-    if (!eliminateStart || !btnEliminated) return;
-    const progress = Math.min(1, (performance.now() - eliminateStart) / ELIMINATE_HOLD_MS);
-    btnEliminated.style.setProperty('--fill', `${Math.round(progress * 100)}%`);
-    if (progress >= 1) {
-      completeElimination();
-      return;
-    }
-    eliminateRaf = requestAnimationFrame(updateEliminateHold);
-  }
-
-  function startEliminateHold(event) {
-    event.preventDefault();
-    resetEliminateHold();
-    eliminateStart = performance.now();
-    if (btnEliminated) btnEliminated.classList.add('holding');
-    updateEliminateHold();
-  }
-
-  function cancelEliminateHold() {
-    resetEliminateHold();
-  }
-
-  function resetGameState() {
+  function readStoredTimer() {
     try {
-      localStorage.clear();
-    } catch (err) {
-      console.warn('Unable to access storage; continuing without clearing state', err);
+      const raw = window.localStorage.getItem(TIMER_STATE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== TIMER_STATE_VERSION) return null;
+      if (!Number.isFinite(parsed.baseSeconds) || !Number.isFinite(parsed.startedAt)) return null;
+      if (!Number.isFinite(parsed.nextBeepAt) || parsed.nextBeepAt <= 0) return null;
+      return parsed;
+    } catch (error) {
+      console.warn('Unable to read timer state', error);
+      return null;
     }
-    assignedSeconds = null;
-    rolledFinal = false;
-    if (slotMin) slotMin.textContent = '0';
-    if (slotSecT) slotSecT.textContent = '0';
-    if (slotSecO) slotSecO.textContent = '0';
-    if (btnSlotSpin) btnSlotSpin.disabled = false;
-    if (btnSlotThirty) btnSlotThirty.disabled = false;
-    if (btnSlotContinue) btnSlotContinue.disabled = true;
   }
 
-  onClickAll('#host, #btnHost', () => {
-    resetGameState();
-    show('host');
-  });
-  onClickAll('#join, #btnJoin', () => {
-    resetGameState();
-    show('join');
-  });
-  onClickAll('#btnJoinBack', () => show('home'));
-  onClickAll('#btnHostBack', () => show('home'));
+  function saveTimerState() {
+    if (!state.timer) return;
+    try {
+      window.localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(state.timer));
+    } catch (error) {
+      console.warn('Unable to save timer state', error);
+    }
+  }
 
-  const arrowRotor = qs('#arrowRotor');
-  let spinning = false;
-  let stepCount = 0;
-  const STEP = 30;
-  const SLOTS = 12;
-  const stinger = new Audio('horror-stinger.mp3');
-  stinger.preload = 'auto';
-  stinger.volume = 1;
+  function clearTimerState() {
+    try {
+      window.localStorage.removeItem(TIMER_STATE_KEY);
+    } catch (error) {
+      console.warn('Unable to clear timer state', error);
+    }
+  }
 
-  const btnSpin = qs('#btnSpin');
-  if (btnSpin) btnSpin.addEventListener('click', () => {
-    if (!arrowRotor) return;
-    if (spinning) return;
-    spinning = true;
-    stepCount = Math.round(stepCount);
-    const spinDurationMs = 2800 + Math.random() * 1200;
-    const turns = Math.floor(spinDurationMs / 700) + Math.floor(Math.random() * 2);
-    const slot = Math.floor(Math.random() * SLOTS);
-    stepCount += turns * SLOTS + slot;
-    arrowRotor.style.transition = `transform ${Math.round(spinDurationMs)}ms cubic-bezier(.12,.72,.12,1)`;
-    arrowRotor.style.transform = `translate(-50%,-50%) rotate(${stepCount * STEP}deg)`;
-    setTimeout(() => {
-      arrowRotor.style.transition = 'none';
-      spinning = false;
-      stinger.currentTime = 0;
-      stinger.play().catch(() => {});
-    }, 3100);
-  });
+  function showScreen(name) {
+    const target = els.screens[name];
+    if (!target || state.activeScreen === name) return;
 
-  function cycle(el, vals, dur, target) {
-    if (!el) return Promise.resolve();
-    return new Promise(res => {
-      const end = Date.now() + dur;
-      let i = 0;
-      (function tick() {
-        if (Date.now() >= end) {
-          el.textContent = target;
-          res();
-          return;
-        }
-        el.textContent = vals[i % vals.length];
-        i++;
-        setTimeout(tick, 50);
-      })();
+    Object.entries(els.screens).forEach(([screenName, screen]) => {
+      if (!screen) return;
+      screen.classList.toggle('active', screenName === name);
     });
+
+    state.activeScreen = name;
+    body.dataset.screen = name;
+    body.classList.toggle('home-active', name === 'home');
+    body.classList.toggle('timer-active', name === 'timer');
+
+    if (name !== 'timer') resetEliminationHold();
+  }
+
+  function openModal() {
+    if (!els.modal) return;
+    els.modal.classList.add('show');
+    els.modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal() {
+    if (!els.modal) return;
+    els.modal.classList.remove('show');
+    els.modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function resetSlotState() {
+    state.assignedSeconds = null;
+    state.rolledFinal = false;
+    state.slotSpinning = false;
+    updateSlotDisplay(0);
+    if (els.slotSpinBtn) els.slotSpinBtn.disabled = false;
+    if (els.slotThirtyBtn) els.slotThirtyBtn.disabled = false;
+    if (els.slotContinueBtn) els.slotContinueBtn.disabled = true;
+  }
+
+  function startFreshSetup(screenName) {
+    stopTimer({ clear: true });
+    resetSlotState();
+    body.classList.remove('playing');
+    showScreen(screenName);
+  }
+
+  function updateSlotDisplay(totalSeconds) {
+    const seconds = Math.max(0, Number(totalSeconds) || 0);
+    if (els.slotMin) els.slotMin.textContent = String(Math.floor(seconds / 60));
+    if (els.slotSecT) els.slotSecT.textContent = String(Math.floor((seconds % 60) / 10));
+    if (els.slotSecO) els.slotSecO.textContent = String(seconds % 10);
   }
 
   function setAssignedInterval(totalSeconds) {
-    if (!slotMin || !slotSecT || !slotSecO || !btnSlotSpin || !btnSlotContinue) return;
-    assignedSeconds = totalSeconds;
-    rolledFinal = true;
-    btnSlotSpin.disabled = true;
-    if (btnSlotThirty) btnSlotThirty.disabled = true;
-    slotMin.textContent = Math.floor(totalSeconds / 60);
-    slotSecT.textContent = Math.floor((totalSeconds % 60) / 10);
-    slotSecO.textContent = totalSeconds % 10;
-    btnSlotContinue.disabled = false;
+    state.assignedSeconds = Math.max(0, Math.min(120, Number(totalSeconds) || 0));
+    state.rolledFinal = true;
+    updateSlotDisplay(state.assignedSeconds);
+    if (els.slotSpinBtn) els.slotSpinBtn.disabled = true;
+    if (els.slotThirtyBtn) els.slotThirtyBtn.disabled = true;
+    if (els.slotContinueBtn) els.slotContinueBtn.disabled = false;
   }
 
-  const btnSlotSpinEl = qs('#btnSlotSpin');
-  if (btnSlotSpinEl) btnSlotSpinEl.addEventListener('click', async () => {
-    if (!slotMin || !slotSecT || !slotSecO || !btnSlotSpin || !btnSlotContinue) return;
-    if (rolledFinal) return;
-    btnSlotSpin.disabled = true;
-    if (btnSlotThirty) btnSlotThirty.disabled = true;
-    assignedSeconds = Math.floor(Math.random() * 121);
-    const m = Math.floor(assignedSeconds / 60);
-    const s = assignedSeconds % 60;
+  function cycleDigit(el, values, durationMs, targetValue) {
+    if (!el || prefersReducedMotion || durationMs <= 0) {
+      if (el) el.textContent = String(targetValue);
+      return Promise.resolve();
+    }
+
+    return new Promise(resolve => {
+      const startedAt = performance.now();
+      let frame = 0;
+
+      function tick(now) {
+        if (now - startedAt >= durationMs) {
+          el.textContent = String(targetValue);
+          resolve();
+          return;
+        }
+
+        el.textContent = String(values[frame % values.length]);
+        frame += 1;
+        window.setTimeout(() => window.requestAnimationFrame(tick), 44);
+      }
+
+      window.requestAnimationFrame(tick);
+    });
+  }
+
+  async function spinSlot() {
+    if (state.rolledFinal || state.slotSpinning) return;
+    state.slotSpinning = true;
+    if (els.slotSpinBtn) els.slotSpinBtn.disabled = true;
+    if (els.slotThirtyBtn) els.slotThirtyBtn.disabled = true;
+
+    const chosenSeconds = Math.floor(Math.random() * 121);
+    const mins = Math.floor(chosenSeconds / 60);
+    const secs = chosenSeconds % 60;
+
     await Promise.all([
-      cycle(slotMin, [0, 1, 2], 1200, m),
-      cycle(slotSecT, [0, 1, 2, 3, 4, 5], 1500, Math.floor(s / 10)),
-      cycle(slotSecO, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 1800, s % 10)
+      cycleDigit(els.slotMin, [0, 1, 2], 1050, mins),
+      cycleDigit(els.slotSecT, [0, 1, 2, 3, 4, 5], 1300, Math.floor(secs / 10)),
+      cycleDigit(els.slotSecO, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 1550, secs % 10)
     ]);
-    rolledFinal = true;
-    btnSlotContinue.disabled = false;
-  });
 
-  const chooseThirtySeconds = () => {
-    if (rolledFinal) return;
-    setAssignedInterval(30);
-  };
+    state.slotSpinning = false;
+    setAssignedInterval(chosenSeconds);
+  }
 
-  btnSlotThirty?.addEventListener('click', chooseThirtySeconds);
-  btnSlotThirty?.addEventListener('pointerup', chooseThirtySeconds);
+  function createAudioController() {
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    const forceFallback = new URLSearchParams(window.location.search).has(FALLBACK_QUERY);
+    const chimeSource = forceFallback ? 'missing-chime.MP3' : 'chime.MP3';
+    const stingerSource = forceFallback ? 'missing-stinger.mp3' : 'horror-stinger.mp3';
+    const chimeLayers = [0, 1, 2].map(() => buildAudio(chimeSource, 0.92));
+    const stinger = buildAudio(stingerSource, 0.9);
+    let audioContext = null;
+    let gainNode = null;
+    let connectedElements = false;
+    let chimeCursor = 0;
+    let flashTimeout = null;
+    let primed = false;
+    let fallbackOnly = false;
 
-  const chime = new Audio('chime.MP3');
-  chime.preload = 'auto';
-  chime.volume = 1;
-  const chimeLayers = [chime.cloneNode(), chime.cloneNode(), chime];
-  const MAX_BEEP_GAIN = 4;
-  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-  let chimeAudioContext = null;
-  let chimeGainNode = null;
-  let chimeCursor = 0;
-  chimeLayers.forEach(layer => {
-    layer.preload = 'auto';
-    layer.volume = 1;
-    if (!layer.src) layer.src = 'chime.MP3';
-    layer.load();
-  });
-  stinger.load();
-
-  function setupLoudChimeOutput() {
-    if (!AudioContextCtor || chimeAudioContext) return;
-    try {
-      chimeAudioContext = new AudioContextCtor();
-      chimeGainNode = chimeAudioContext.createGain();
-      chimeGainNode.gain.value = MAX_BEEP_GAIN;
-      chimeGainNode.connect(chimeAudioContext.destination);
-      chimeLayers.forEach(layer => {
-        const source = chimeAudioContext.createMediaElementSource(layer);
-        source.connect(chimeGainNode);
+    function buildAudio(src, volume) {
+      const audio = new Audio(src);
+      audio.preload = 'auto';
+      audio.volume = volume;
+      on(audio, 'error', () => {
+        fallbackOnly = true;
+        setStatus(els.audioStatus, 'Visual and vibration cue ready', 'warn');
       });
-    } catch (err) {
-      chimeAudioContext = null;
-      chimeGainNode = null;
-      console.warn('Unable to boost chime output with Web Audio', err);
+      return audio;
     }
-  }
-  setupLoudChimeOutput();
 
-  function setFlashDuration() {
-    if (!Number.isFinite(chime.duration) || chime.duration <= 0) return;
+    function settlePlayback(playPromise, timeoutMs = 600) {
+      if (!playPromise || typeof playPromise.then !== 'function') return Promise.resolve(true);
 
-    const adjusted = chime.duration * 1000 - 180;
-    flashDurationMs = Math.max(320, adjusted);
-  }
-  chime.addEventListener('loadedmetadata', setFlashDuration);
-  setFlashDuration();
-
-
-  let audioPrimed = false;
-  function primeChime() {
-    if (chimeAudioContext?.state === 'suspended') {
-      chimeAudioContext.resume().catch(() => {});
+      return Promise.race([
+        playPromise.then(() => true).catch(() => false),
+        new Promise(resolve => window.setTimeout(() => resolve(false), timeoutMs))
+      ]);
     }
-    if (audioPrimed) return;
-    const unlocks = chimeLayers.map(layer => {
-      const originalVolume = layer.volume;
-      layer.volume = 0;
-      return layer
-        .play()
-        .then(() => {
-          layer.pause();
-          layer.currentTime = 0;
-          layer.volume = originalVolume;
-          return true;
-        })
-        .catch(() => {
-          layer.volume = originalVolume;
+
+    function ensureAudioContext() {
+      if (!AudioContextCtor) return null;
+      if (!audioContext) {
+        try {
+          audioContext = new AudioContextCtor();
+          gainNode = audioContext.createGain();
+          gainNode.gain.value = 1.35;
+          gainNode.connect(audioContext.destination);
+        } catch (error) {
+          audioContext = null;
+          gainNode = null;
+          return null;
+        }
+      }
+
+      if (!connectedElements && gainNode) {
+        try {
+          chimeLayers.concat(stinger).forEach(audio => {
+            const source = audioContext.createMediaElementSource(audio);
+            source.connect(gainNode);
+          });
+          connectedElements = true;
+        } catch (error) {
+          connectedElements = false;
+        }
+      }
+
+      return audioContext;
+    }
+
+    async function resumeContext() {
+      const context = ensureAudioContext();
+      if (!context) return false;
+      if (context.state === 'suspended') {
+        try {
+          await context.resume();
+        } catch (error) {
           return false;
-        });
-    });
-
-    Promise.all(unlocks).then(results => {
-      if (results.some(Boolean)) {
-        audioPrimed = true;
-        doc.removeEventListener('pointerdown', unlockAudio);
+        }
       }
-    });
-  }
+      return context.state === 'running';
+    }
 
-  function unlockAudio() {
-    primeChime();
-  }
+    async function prime() {
+      if (forceFallback) {
+        fallbackOnly = true;
+        setStatus(els.audioStatus, 'Visual and vibration cue ready', 'warn');
+        return false;
+      }
 
-  doc.addEventListener('pointerdown', unlockAudio);
+      if (primed && !fallbackOnly) return true;
 
-  function flashForBeep() {
-    if (!flashOverlay) return;
+      const contextReady = await resumeContext();
+      const unlockResults = await Promise.all(
+        chimeLayers.map(async audio => {
+          const originalVolume = audio.volume;
+          audio.volume = 0;
+          try {
+            const unlocked = await settlePlayback(audio.play(), 520);
+            if (unlocked) {
+              audio.pause();
+              audio.currentTime = 0;
+            }
+            audio.volume = originalVolume;
+            return unlocked;
+          } catch (error) {
+            audio.volume = originalVolume;
+            return false;
+          }
+        })
+      );
 
+      primed = contextReady || unlockResults.some(Boolean);
+      if (primed && !fallbackOnly) {
+        setStatus(els.audioStatus, 'Audio cue ready', 'ok');
+      } else {
+        setStatus(els.audioStatus, 'Visual and vibration cue ready', 'warn');
+      }
+      return primed;
+    }
 
-    body.classList.add('flash-active');
-    clearTimeout(flashTimeout);
-    const duration = Number.isFinite(flashDurationMs) && flashDurationMs > 0 ? flashDurationMs : 800;
-    flashTimeout = setTimeout(() => body.classList.remove('flash-active'), duration);
+    function flashAndVibrate(pattern = [60]) {
+      body.classList.add('flash-active');
+      window.clearTimeout(flashTimeout);
+      flashTimeout = window.setTimeout(() => body.classList.remove('flash-active'), 420);
 
-
-  }
-
-  function playChime() {
-    let layer = null;
-    const startIndex = chimeCursor % chimeLayers.length;
-    for (let i = 0; i < chimeLayers.length; i += 1) {
-      const candidate = chimeLayers[(startIndex + i) % chimeLayers.length];
-      if (candidate.paused) {
-        layer = candidate;
-        chimeCursor = (startIndex + i + 1) % chimeLayers.length;
-        break;
+      if (navigator.vibrate) {
+        try {
+          navigator.vibrate(pattern);
+        } catch (error) {
+          // Vibration is best-effort on phones and usually unavailable on desktop.
+        }
       }
     }
-    if (!layer) {
-      layer = chimeLayers[startIndex];
+
+    function fallbackTone(kind) {
+      const context = ensureAudioContext();
+      if (!context || context.state !== 'running') return;
+
+      try {
+        const oscillator = context.createOscillator();
+        const toneGain = context.createGain();
+        const now = context.currentTime;
+        oscillator.type = kind === 'stinger' ? 'sawtooth' : 'triangle';
+        oscillator.frequency.setValueAtTime(kind === 'stinger' ? 120 : 880, now);
+        oscillator.frequency.exponentialRampToValueAtTime(kind === 'stinger' ? 70 : 620, now + 0.22);
+        toneGain.gain.setValueAtTime(0.0001, now);
+        toneGain.gain.exponentialRampToValueAtTime(kind === 'stinger' ? 0.18 : 0.22, now + 0.02);
+        toneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.26);
+        oscillator.connect(toneGain);
+        toneGain.connect(context.destination);
+        oscillator.start(now);
+        oscillator.stop(now + 0.28);
+      } catch (error) {
+        fallbackOnly = true;
+      }
+    }
+
+    async function playAudio(audio, kind) {
+      if (!primed) await prime();
+      if (forceFallback || fallbackOnly) {
+        fallbackOnly = true;
+        fallbackTone(kind);
+        setStatus(els.audioStatus, 'Visual and vibration cue ready', 'warn');
+        return false;
+      }
+
+      try {
+        audio.currentTime = 0;
+        await audio.play();
+        return true;
+      } catch (error) {
+        fallbackOnly = true;
+        fallbackTone(kind);
+        setStatus(els.audioStatus, 'Visual and vibration cue ready', 'warn');
+        return false;
+      }
+    }
+
+    function nextChimeLayer() {
+      const startIndex = chimeCursor % chimeLayers.length;
+      for (let offset = 0; offset < chimeLayers.length; offset += 1) {
+        const candidate = chimeLayers[(startIndex + offset) % chimeLayers.length];
+        if (candidate.paused) {
+          chimeCursor = (startIndex + offset + 1) % chimeLayers.length;
+          return candidate;
+        }
+      }
       chimeCursor = (startIndex + 1) % chimeLayers.length;
-    }
-    layer.currentTime = 0;
-    layer.volume = 1;
-    layer.play().catch(() => {});
-    flashForBeep();
-    if (navigator.vibrate) navigator.vibrate(50);
-  }
-
-  const btnJoinTestBeep = qs('#btnJoinTestBeep');
-  if (btnJoinTestBeep) {
-    btnJoinTestBeep.addEventListener('click', () => {
-      primeChime();
-      playChime();
-    });
-  }
-  const btnTimerTestBeep = qs('#btnTimerTestBeep');
-  if (btnTimerTestBeep) {
-    btnTimerTestBeep.addEventListener('click', () => {
-      primeChime();
-      playChime();
-    });
-  }
-
-  const domCountdown = qs('#countdown');
-  let timerRunning = false;
-  let nextAt = 0;
-  let base = 30;
-  let start = 0;
-  let rafId = null;
-  let panic = false;
-  let panicStart = 0;
-  const PANIC_AFTER = 5 * 60 * 1000;
-  const DISPLAY_LEAD_MS = 220;
-  const CHIME_LEAD_MS = 220;
-  const prestartSelector = '#screen-timer .prestart';
-  let wakeLock = null;
-  let gameId = null;
-
-  function fmt(s) {
-    return (
-      String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0')
-    );
-  }
-
-  function adaptive(now) {
-    if (panic) return Math.max(0.4, (1 - (now - panicStart) / 420000) * 0.6 + 0.4);
-    const mins = Math.floor((now - start) / 60000);
-    return Math.max(3, base - 2 * mins);
-  }
-
-  function schedule(now) {
-    nextAt = now + adaptive(now) * 1000;
-  }
-
-  function update(id) {
-    if (!timerRunning || id !== gameId) return;
-
-    const now = performance.now();
-    if (!panic && now - start >= PANIC_AFTER) {
-      panic = true;
-      panicStart = now;
-      body.classList.add('panic');
+      return chimeLayers[startIndex];
     }
 
-    const left = Math.max(0, nextAt - now);
-    const displayLeft = Math.max(0, left - DISPLAY_LEAD_MS);
-    const chimeLeft = Math.max(0, left - CHIME_LEAD_MS);
-    const sec = Math.ceil(displayLeft / 1000);
-    domCountdown.textContent = fmt(sec);
-    if (sec <= 10) domCountdown.classList.add('red');
-    else domCountdown.classList.remove('red');
-    if (chimeLeft <= 0) {
-      playChime();
-      schedule(now);
+    async function playChime() {
+      flashAndVibrate([70]);
+      setStatus(els.audioStatus, 'Cue tested', 'ok');
+      await playAudio(nextChimeLayer(), 'chime');
     }
-    rafId = requestAnimationFrame(() => update(id));
+
+    async function playStinger() {
+      flashAndVibrate([30, 40, 80]);
+      await playAudio(stinger, 'stinger');
+    }
+
+    return {
+      prime,
+      playChime,
+      playStinger
+    };
+  }
+
+  const audio = createAudioController();
+
+  function currentIntervalSeconds(timer = state.timer, now = Date.now()) {
+    if (!timer) return NORMAL_FLOOR_SECONDS;
+    const elapsedMs = Math.max(0, now - timer.startedAt);
+
+    if (elapsedMs >= PANIC_AFTER_MS) {
+      const panicElapsed = Math.min(PANIC_RAMP_MS, elapsedMs - PANIC_AFTER_MS);
+      const progress = panicElapsed / PANIC_RAMP_MS;
+      return Math.max(PANIC_FLOOR_SECONDS, PANIC_START_SECONDS - progress * 0.6);
+    }
+
+    const minutesElapsed = Math.floor(elapsedMs / 60000);
+    return Math.max(NORMAL_FLOOR_SECONDS, timer.baseSeconds - minutesElapsed * 2);
+  }
+
+  function scheduleNextBeep(now = Date.now()) {
+    if (!state.timer) return;
+    state.timer.nextBeepAt = now + currentIntervalSeconds(state.timer, now) * 1000;
+    saveTimerState();
+  }
+
+  function makeTimer(baseSeconds) {
+    const now = Date.now();
+    const timer = {
+      version: TIMER_STATE_VERSION,
+      id: `${now}-${Math.random().toString(16).slice(2)}`,
+      running: true,
+      baseSeconds: Math.max(0, Math.min(120, Number(baseSeconds) || 0)),
+      startedAt: now,
+      nextBeepAt: now + NORMAL_FLOOR_SECONDS * 1000
+    };
+    timer.nextBeepAt = now + currentIntervalSeconds(timer, now) * 1000;
+    return timer;
+  }
+
+  function updateCountdown(leftMs) {
+    if (!els.countdown || !state.timer) return;
+    const displayLeftSeconds = Math.ceil(Math.max(0, leftMs - DISPLAY_LEAD_MS) / 1000);
+    els.countdown.textContent = formatSeconds(displayLeftSeconds);
+    els.countdown.classList.toggle('red', displayLeftSeconds <= 10);
+    body.classList.toggle('panic', Date.now() - state.timer.startedAt >= PANIC_AFTER_MS);
+
+    const interval = currentIntervalSeconds();
+    if (els.timerStatus) {
+      const nextText = displayLeftSeconds <= 0 ? 'Cue now' : `Next cue ${formatSeconds(displayLeftSeconds)}`;
+      const intervalText = interval < 1 ? `${interval.toFixed(1)}s interval` : `${formatSeconds(interval)} interval`;
+      els.timerStatus.textContent = `${nextText} - ${intervalText}`;
+    }
+  }
+
+  function tickTimer() {
+    if (!state.timer || !state.timer.running) return;
+    const now = Date.now();
+    let leftMs = state.timer.nextBeepAt - now;
+
+    if (leftMs <= CHIME_LEAD_MS) {
+      if (state.restoredTimer && now - state.timer.nextBeepAt > 1200) {
+        state.restoredTimer = false;
+      } else {
+        audio.playChime();
+      }
+      scheduleNextBeep(now);
+      leftMs = state.timer.nextBeepAt - now;
+    }
+
+    updateCountdown(leftMs);
+    state.timerRaf = window.requestAnimationFrame(tickTimer);
   }
 
   async function requestWakeLock() {
-    if (!('wakeLock' in navigator)) return;
+    if (!('wakeLock' in navigator)) {
+      setStatus(els.wakeStatus, 'Wake lock unavailable', 'warn');
+      return;
+    }
+
     try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => {
-        wakeLock = null;
-        if (timerRunning) requestWakeLock();
+      if (state.wakeLock) return;
+      state.wakeLock = await navigator.wakeLock.request('screen');
+      setStatus(els.wakeStatus, 'Screen held awake', 'ok');
+      on(state.wakeLock, 'release', () => {
+        state.wakeLock = null;
+        if (state.timer && state.timer.running && doc.visibilityState === 'visible') {
+          requestWakeLock();
+        }
       });
-    } catch (err) {
-      wakeLock = null;
+    } catch (error) {
+      state.wakeLock = null;
+      setStatus(els.wakeStatus, 'Wake lock blocked', 'warn');
     }
   }
 
   function releaseWakeLock() {
-    if (wakeLock) {
-      wakeLock.release().catch(() => {});
-      wakeLock = null;
+    if (!state.wakeLock) return;
+    state.wakeLock.release().catch(() => {});
+    state.wakeLock = null;
+    setStatus(els.wakeStatus, 'Wake lock idle', 'idle');
+  }
+
+  function startTimer(baseSeconds, options = {}) {
+    stopTimer({ clear: false, keepDisplay: true });
+    state.timer = options.restoredTimer || makeTimer(baseSeconds);
+    state.restoredTimer = Boolean(options.restored);
+    state.timer.running = true;
+    saveTimerState();
+
+    body.classList.add('playing');
+    showScreen('timer');
+    updateCountdown(Math.max(0, state.timer.nextBeepAt - Date.now()));
+    requestWakeLock();
+
+    if (state.timerRaf) window.cancelAnimationFrame(state.timerRaf);
+    state.timerRaf = window.requestAnimationFrame(tickTimer);
+  }
+
+  function stopTimer({ clear = false, keepDisplay = false } = {}) {
+    if (state.timerRaf) window.cancelAnimationFrame(state.timerRaf);
+    state.timerRaf = null;
+    state.timer = null;
+    state.restoredTimer = false;
+    body.classList.remove('playing', 'panic', 'flash-active');
+    if (els.countdown) {
+      els.countdown.classList.remove('red');
+      if (!keepDisplay) els.countdown.textContent = '00:30';
+    }
+    if (els.timerStatus) els.timerStatus.textContent = 'Ready';
+    releaseWakeLock();
+    if (clear) clearTimerState();
+  }
+
+  function restoreTimerIfPresent() {
+    const saved = readStoredTimer();
+    if (!saved || !saved.running) return false;
+
+    state.timer = saved;
+    startTimer(saved.baseSeconds, { restored: true, restoredTimer: saved });
+    return true;
+  }
+
+  function spinHunter() {
+    if (!els.arrowRotor || state.spinnerBusy) return;
+    state.spinnerBusy = true;
+    if (els.spinBtn) els.spinBtn.disabled = true;
+    if (els.spinner) els.spinner.classList.add('spinning');
+    audio.prime();
+
+    const stepDegrees = 30;
+    const slotCount = 12;
+    const duration = prefersReducedMotion ? 0 : 2600 + Math.random() * 900;
+    const turns = prefersReducedMotion ? 1 : 4 + Math.floor(Math.random() * 3);
+    const slot = Math.floor(Math.random() * slotCount);
+    state.spinnerSteps = Math.round(state.spinnerSteps) + turns * slotCount + slot;
+
+    const finish = () => {
+      state.spinnerBusy = false;
+      if (els.spinBtn) els.spinBtn.disabled = false;
+      if (els.spinner) els.spinner.classList.remove('spinning');
+      els.arrowRotor.style.transition = 'none';
+      audio.playStinger();
+    };
+
+    if (duration === 0) {
+      els.arrowRotor.style.transition = 'none';
+      els.arrowRotor.style.transform = `translate(-50%, -50%) rotate(${state.spinnerSteps * stepDegrees}deg)`;
+      finish();
+      return;
+    }
+
+    els.arrowRotor.style.transition = `transform ${Math.round(duration)}ms cubic-bezier(.12,.76,.09,1)`;
+    els.arrowRotor.style.transform = `translate(-50%, -50%) rotate(${state.spinnerSteps * stepDegrees}deg)`;
+    window.setTimeout(finish, duration + 90);
+  }
+
+  function beginAssignedTimer() {
+    if (!state.rolledFinal || state.assignedSeconds === null) return;
+    audio.prime();
+    startTimer(state.assignedSeconds);
+  }
+
+  function beginDefaultTimer() {
+    audio.prime();
+    startTimer(state.assignedSeconds === null ? 30 : state.assignedSeconds);
+  }
+
+  function resetEliminationHold() {
+    if (state.eliminateRaf) window.cancelAnimationFrame(state.eliminateRaf);
+    state.eliminateRaf = null;
+    state.eliminateStartedAt = 0;
+    if (els.eliminatedBtn) {
+      els.eliminatedBtn.classList.remove('holding');
+      els.eliminatedBtn.style.setProperty('--fill', '0%');
     }
   }
 
-  function startGame() {
-    primeChime();
-    gameId = Date.now();
-    timerRunning = true;
-    start = performance.now();
-    schedule(start);
-    requestWakeLock();
-    update(gameId);
+  function completeElimination() {
+    resetEliminationHold();
+    stopTimer({ clear: true });
+    resetSlotState();
+    showScreen('home');
   }
 
-  function endGame() {
-    timerRunning = false;
-    if (rafId) cancelAnimationFrame(rafId);
-    domCountdown.classList.remove('red');
-    body.classList.remove('panic');
+  function updateEliminationHold() {
+    if (!state.eliminateStartedAt || !els.eliminatedBtn) return;
+    const progress = Math.min(1, (performance.now() - state.eliminateStartedAt) / HOLD_TO_ELIMINATE_MS);
+    els.eliminatedBtn.style.setProperty('--fill', `${Math.round(progress * 100)}%`);
 
+    if (progress >= 1) {
+      completeElimination();
+      return;
+    }
 
-
-    body.classList.remove('flash-active');
-
-
-
-    releaseWakeLock();
+    state.eliminateRaf = window.requestAnimationFrame(updateEliminationHold);
   }
 
-  doc.addEventListener('visibilitychange', () => {
-    if (doc.visibilityState === 'visible' && timerRunning) requestWakeLock();
-  });
-
-  function clearPrestart() {
-    const prestart = qsa(prestartSelector);
-    if (prestart.length) prestart.forEach(el => el.remove());
+  function startEliminationHold(event) {
+    event.preventDefault();
+    if (!state.timer || !state.timer.running) return;
+    resetEliminationHold();
+    state.eliminateStartedAt = performance.now();
+    els.eliminatedBtn.classList.add('holding');
+    updateEliminationHold();
   }
 
-  onClickAll('#btnSlotContinue', () => {
-    if (!rolledFinal) return;
-    base = assignedSeconds;
-    domCountdown.textContent = fmt(base);
-    show('timer');
-    body.classList.add('playing');
-    clearPrestart();
-    startGame();
-  });
+  function wireEvents() {
+    on(els.logoBtn, 'click', () => {
+      stopTimer({ clear: true });
+      resetSlotState();
+      showScreen('home');
+    });
+    on(els.hostBtn, 'click', () => startFreshSetup('host'));
+    on(els.joinBtn, 'click', () => startFreshSetup('join'));
+    on(els.hostBackBtn, 'click', () => showScreen('home'));
+    on(els.joinBackBtn, 'click', () => showScreen('home'));
+    on(els.quickRulesBtn, 'click', openModal);
+    qsa('[data-close], .modal-close').forEach(button => on(button, 'click', closeModal));
+    on(els.modal, 'click', event => {
+      if (event.target && event.target.matches('[data-close]')) closeModal();
+    });
 
-  onClickAll('#play, #btnStart', () => {
-    body.classList.add('playing');
-    clearPrestart();
-    startGame();
-  });
-}
+    on(els.spinBtn, 'click', spinHunter);
+    on(els.slotSpinBtn, 'click', spinSlot);
+    on(els.slotThirtyBtn, 'click', () => {
+      if (!state.rolledFinal && !state.slotSpinning) setAssignedInterval(30);
+    });
+    on(els.slotContinueBtn, 'click', beginAssignedTimer);
+    on(els.startBtn, 'click', beginDefaultTimer);
 
-function startApp() {
-  const body = document.body;
-  if (!body) {
-    console.warn('startApp: document.body not ready');
-    return;
+    [els.joinTestBeepBtn, els.timerTestBeepBtn].forEach(button => {
+      on(button, 'click', () => {
+        audio.prime();
+        audio.playChime();
+      });
+    });
+
+    on(els.eliminatedBtn, 'pointerdown', startEliminationHold);
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(eventName => {
+      on(els.eliminatedBtn, eventName, resetEliminationHold);
+    });
+    on(els.eliminatedBtn, 'click', event => event.preventDefault());
+
+    on(doc, 'pointerdown', () => {
+      audio.prime();
+    });
+
+    on(doc, 'visibilitychange', () => {
+      if (!state.timer || !state.timer.running) return;
+      if (doc.visibilityState === 'visible') {
+        requestWakeLock();
+        saveTimerState();
+      }
+    });
+
+    on(window, 'pagehide', saveTimerState);
   }
-  wireUi(document);
-}
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startApp);
-} else {
-  startApp();
-}
+  function init() {
+    if (!body) return;
+    body.dataset.screen = 'home';
+    body.classList.add('home-active');
+    setStatus(els.audioStatus, 'Cue not tested', 'idle');
+    setStatus(els.wakeStatus, 'Wake lock idle', 'idle');
+    resetSlotState();
+    wireEvents();
+    restoreTimerIfPresent();
+  }
+
+  if (doc.readyState === 'loading') {
+    on(doc, 'DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
