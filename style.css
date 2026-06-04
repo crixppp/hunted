@@ -448,11 +448,74 @@ body.home-active .brand {
   text-align: center;
 }
 
+.tension-meter {
+  --tension-scale: 0;
+  position: relative;
+  width: min(100%, 740px);
+  margin: 0 auto;
+  border-radius: 10px;
+}
+
+.tension-meter::before,
+.tension-meter::after {
+  position: absolute;
+  pointer-events: none;
+  content: "";
+}
+
+.tension-meter::before {
+  inset: 0;
+  z-index: 1;
+  border: 1px solid rgba(244, 181, 93, 0.12);
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 24px rgba(244, 181, 93, 0.035),
+    0 0 18px rgba(0, 0, 0, 0.22);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.tension-meter::after {
+  right: 12px;
+  bottom: 8px;
+  left: 12px;
+  z-index: 2;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(244, 181, 93, 0.12), rgba(244, 181, 93, 0.5));
+  box-shadow: 0 0 10px rgba(244, 181, 93, 0.16);
+  opacity: 0.62;
+  transform: scaleX(var(--tension-scale));
+  transform-origin: left center;
+  transition: opacity 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.tension-meter.warning::before {
+  border-color: rgba(217, 45, 53, 0.32);
+  box-shadow:
+    inset 0 0 26px rgba(217, 45, 53, 0.085),
+    0 0 20px rgba(217, 45, 53, 0.08);
+}
+
+.tension-meter.warning::after {
+  background: linear-gradient(90deg, rgba(244, 181, 93, 0.16), rgba(217, 45, 53, 0.68));
+  box-shadow: 0 0 12px rgba(217, 45, 53, 0.2);
+  opacity: 0.78;
+}
+
+body.panic .tension-meter::before {
+  animation: tensionSkitter 520ms steps(2, end) infinite;
+}
+
+body.panic .tension-meter::after {
+  animation: tensionSkitter 390ms steps(2, end) infinite;
+}
+
 .countdown {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(100%, 740px);
+  position: relative;
+  width: 100%;
   min-height: clamp(138px, 34vw, 240px);
   margin: 0 auto;
   color: var(--text);
@@ -631,6 +694,18 @@ body.playing .modal {
   }
 }
 
+@keyframes tensionSkitter {
+  0%,
+  100% {
+    opacity: 0.78;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.5;
+    filter: brightness(1.24);
+  }
+}
+
 @media (max-width: 560px) {
   .app-header {
     align-items: flex-start;
@@ -701,6 +776,12 @@ body.playing .modal {
     min-height: calc(100dvh - 148px);
   }
 
+  .tension-meter::after {
+    right: 10px;
+    bottom: 7px;
+    left: 10px;
+  }
+
   .eliminated-btn {
     right: 12px;
     bottom: max(12px, env(safe-area-inset-bottom));
@@ -749,5 +830,10 @@ body.playing .modal {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
+  }
+
+  body.panic .tension-meter::before,
+  body.panic .tension-meter::after {
+    animation: none !important;
   }
 }
