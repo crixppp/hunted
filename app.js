@@ -12,8 +12,6 @@
   const DISPLAY_LEAD_MS = 160;
   const HOLD_TO_ELIMINATE_MS = 1600;
   const FALLBACK_QUERY = 'huntedFallbackAudio';
-  const BROWSER_NOTICE_DISMISSED_KEY = 'hunted.browserNoticeDismissed';
-  const IN_APP_BROWSER_PATTERN = /(FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|TikTok|Bytedance|musical_ly|Snapchat|Twitter|LinkedInApp|Pinterest|Reddit|Discord|WhatsApp|; wv\)|\bwv\b)/i;
 
   const doc = document;
   const body = doc.body;
@@ -58,12 +56,7 @@
     audioStatus: byId('audioStatus'),
     wakeStatus: byId('wakeStatus'),
     eliminatedBtn: byId('btnEliminated'),
-    flashOverlay: qs('.flash-overlay'),
-    browserNotice: byId('browserNotice'),
-    browserNoticeText: byId('browserNoticeText'),
-    browserOpenBtn: byId('browserOpenBtn'),
-    browserCopyBtn: byId('browserCopyBtn'),
-    browserCloseBtn: byId('browserCloseBtn')
+    flashOverlay: qs('.flash-overlay')
   };
 
   const state = {
@@ -124,91 +117,6 @@
     } catch (error) {
       console.warn('Unable to clear timer state', error);
     }
-  }
-
-  function getSessionFlag(key) {
-    try {
-      return window.sessionStorage.getItem(key);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function setSessionFlag(key, value) {
-    try {
-      window.sessionStorage.setItem(key, value);
-    } catch (error) {
-      // Session storage is optional; the notice can still work without it.
-    }
-  }
-
-  function isStandaloneApp() {
-    return Boolean(
-      window.navigator.standalone ||
-      window.matchMedia('(display-mode: standalone)').matches
-    );
-  }
-
-  function isLikelyInAppBrowser() {
-    return !isStandaloneApp() && IN_APP_BROWSER_PATTERN.test(window.navigator.userAgent || '');
-  }
-
-  function buildAndroidIntentUrl() {
-    const currentUrl = new URL(window.location.href);
-    const scheme = currentUrl.protocol.replace(':', '');
-    const destination = `${currentUrl.host}${currentUrl.pathname}${currentUrl.search}`;
-    return `intent://${destination}#Intent;scheme=${scheme};action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=${encodeURIComponent(currentUrl.href)};end`;
-  }
-
-  function isAndroid() {
-    return /Android/i.test(window.navigator.userAgent || '');
-  }
-
-  function openPhoneBrowser(event) {
-    event.preventDefault();
-
-    if (isAndroid() && /^https?:$/.test(window.location.protocol)) {
-      window.location.href = buildAndroidIntentUrl();
-      return;
-    }
-
-    window.open(window.location.href, '_blank', 'noopener');
-    if (els.browserNoticeText) {
-      els.browserNoticeText.textContent = 'If this stays in-app, copy the link and open it in your browser.';
-    }
-  }
-
-  async function copyBrowserLink() {
-    const originalLabel = els.browserCopyBtn ? els.browserCopyBtn.textContent : '';
-
-    try {
-      await window.navigator.clipboard.writeText(window.location.href);
-      if (els.browserCopyBtn) els.browserCopyBtn.textContent = 'Copied';
-    } catch (error) {
-      if (els.browserNoticeText) {
-        els.browserNoticeText.textContent = 'Copy the address from the menu, then open it in your browser.';
-      }
-    }
-
-    if (els.browserCopyBtn && originalLabel) {
-      window.setTimeout(() => {
-        els.browserCopyBtn.textContent = originalLabel;
-      }, 1600);
-    }
-  }
-
-  function dismissBrowserNotice() {
-    if (els.browserNotice) els.browserNotice.hidden = true;
-    body.classList.remove('in-app-browser');
-    setSessionFlag(BROWSER_NOTICE_DISMISSED_KEY, '1');
-  }
-
-  function initBrowserNotice() {
-    if (!els.browserNotice || getSessionFlag(BROWSER_NOTICE_DISMISSED_KEY) === '1') return;
-    if (!isLikelyInAppBrowser()) return;
-
-    body.classList.add('in-app-browser');
-    els.browserNotice.hidden = false;
   }
 
   function showScreen(name) {
@@ -795,9 +703,6 @@
     on(els.hostBackBtn, 'click', () => showScreen('home'));
     on(els.joinBackBtn, 'click', () => showScreen('home'));
     on(els.quickRulesBtn, 'click', openModal);
-    on(els.browserOpenBtn, 'click', openPhoneBrowser);
-    on(els.browserCopyBtn, 'click', copyBrowserLink);
-    on(els.browserCloseBtn, 'click', dismissBrowserNotice);
     qsa('[data-close], .modal-close').forEach(button => on(button, 'click', closeModal));
     on(els.modal, 'click', event => {
       if (event.target && event.target.matches('[data-close]')) closeModal();
@@ -846,7 +751,6 @@
     setStatus(els.audioStatus, 'Cue not tested', 'idle');
     setStatus(els.wakeStatus, 'Wake lock idle', 'idle');
     resetSlotState();
-    initBrowserNotice();
     wireEvents();
     restoreTimerIfPresent();
   }
