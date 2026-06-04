@@ -50,6 +50,7 @@
     joinTestBeepBtn: byId('btnJoinTestBeep'),
     timerTestBeepBtn: byId('btnTimerTestBeep'),
     startBtn: byId('play'),
+    tensionMeter: byId('tensionMeter'),
     countdown: byId('countdown'),
     timerStatus: byId('timerStatus'),
     audioStatus: byId('audioStatus'),
@@ -447,9 +448,21 @@
     return Math.max(NORMAL_FLOOR_SECONDS, timer.baseSeconds - minutesElapsed * 2);
   }
 
+  function ensureTimerCycle(timer, now = Date.now()) {
+    if (!timer) return;
+    if (Number.isFinite(timer.cycleStartedAt) && Number.isFinite(timer.cycleDurationMs)) return;
+
+    const fallbackDurationMs = Math.max(100, currentIntervalSeconds(timer, now) * 1000);
+    timer.cycleDurationMs = fallbackDurationMs;
+    timer.cycleStartedAt = Math.max(timer.startedAt, timer.nextBeepAt - fallbackDurationMs);
+  }
+
   function scheduleNextBeep(now = Date.now()) {
     if (!state.timer) return;
-    state.timer.nextBeepAt = now + currentIntervalSeconds(state.timer, now) * 1000;
+    const durationMs = currentIntervalSeconds(state.timer, now) * 1000;
+    state.timer.cycleStartedAt = now;
+    state.timer.cycleDurationMs = durationMs;
+    state.timer.nextBeepAt = now + durationMs;
     saveTimerState();
   }
 
@@ -461,18 +474,42 @@
       running: true,
       baseSeconds: Math.max(0, Math.min(120, Number(baseSeconds) || 0)),
       startedAt: now,
+      cycleStartedAt: now,
+      cycleDurationMs: NORMAL_FLOOR_SECONDS * 1000,
       nextBeepAt: now + NORMAL_FLOOR_SECONDS * 1000
     };
-    timer.nextBeepAt = now + currentIntervalSeconds(timer, now) * 1000;
+    timer.cycleDurationMs = currentIntervalSeconds(timer, now) * 1000;
+    timer.nextBeepAt = now + timer.cycleDurationMs;
     return timer;
+  }
+
+  function updateTensionMeter(leftMs, displayLeftSeconds, panicActive) {
+    if (!els.tensionMeter || !state.timer) return;
+    ensureTimerCycle(state.timer);
+
+    const durationMs = Math.max(100, state.timer.cycleDurationMs || 0);
+    const progress = Math.max(0, Math.min(1, 1 - Math.max(0, leftMs) / durationMs));
+    els.tensionMeter.style.setProperty('--tension-scale', progress.toFixed(3));
+    els.tensionMeter.classList.toggle('warning', displayLeftSeconds <= 10);
+    els.tensionMeter.classList.toggle('panic', panicActive);
+  }
+
+  function resetTensionMeter() {
+    if (!els.tensionMeter) return;
+    els.tensionMeter.style.setProperty('--tension-scale', '0');
+    els.tensionMeter.classList.remove('warning', 'panic');
   }
 
   function updateCountdown(leftMs) {
     if (!els.countdown || !state.timer) return;
+    ensureTimerCycle(state.timer);
+
     const displayLeftSeconds = Math.ceil(Math.max(0, leftMs - DISPLAY_LEAD_MS) / 1000);
+    const panicActive = Date.now() - state.timer.startedAt >= PANIC_AFTER_MS;
     els.countdown.textContent = formatSeconds(displayLeftSeconds);
     els.countdown.classList.toggle('red', displayLeftSeconds <= 10);
-    body.classList.toggle('panic', Date.now() - state.timer.startedAt >= PANIC_AFTER_MS);
+    body.classList.toggle('panic', panicActive);
+    updateTensionMeter(leftMs, displayLeftSeconds, panicActive);
 
     const interval = currentIntervalSeconds();
     if (els.timerStatus) {
@@ -557,6 +594,7 @@
       if (!keepDisplay) els.countdown.textContent = '00:30';
     }
     if (els.timerStatus) els.timerStatus.textContent = 'Ready';
+    resetTensionMeter();
     releaseWakeLock();
     if (clear) clearTimerState();
   }
