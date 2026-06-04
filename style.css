@@ -211,44 +211,6 @@ body.home-active .brand {
   border-color: rgba(244, 181, 93, 0.42);
 }
 
-.browser-notice[hidden] {
-  display: none;
-}
-
-.browser-notice {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  width: min(calc(100% - 28px), 920px);
-  margin: 10px auto 0;
-  padding: 12px;
-  border: 1px solid rgba(244, 181, 93, 0.24);
-  border-radius: 8px;
-  background: rgba(15, 12, 12, 0.92);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
-}
-
-.browser-notice p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.browser-notice-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.browser-notice button {
-  min-height: 42px;
-  padding: 9px 12px;
-  font-size: 13px;
-}
-
 .container {
   width: min(100%, 920px);
   min-height: calc(100dvh - 112px);
@@ -756,19 +718,6 @@ body.playing .modal {
   .status-pill {
     max-width: 58vw;
     font-size: 10px;
-  }
-
-  .browser-notice {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .browser-notice-actions {
-    justify-content: stretch;
-  }
-
-  .browser-notice button {
-    flex: 1 1 120px;
   }
 
   .container {
