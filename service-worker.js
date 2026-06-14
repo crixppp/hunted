@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hunted-offline-v1';
+const CACHE_NAME = 'hunted-offline-v2';
 const INDEX_URL = new URL('index.html', self.location.href).href;
 const PRECACHE_URLS = [
   INDEX_URL,
