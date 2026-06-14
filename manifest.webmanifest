@@ -1,0 +1,19 @@
+{
+  "name": "Hunted",
+  "short_name": "Hunted",
+  "description": "A live-action hide-and-seek survival game for phones.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0909",
+  "theme_color": "#0b0909",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}

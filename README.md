@@ -4,7 +4,14 @@ https://crixppp.github.io/hunted/
 
 Hunted is a live-action hide-and-seek survival game played in a confined space. The site runs on each player's phone and handles the Hunter selection, Prey timer rolls, sound cues, warning state, and panic pacing.
 
-The project is a static GitHub Pages app. It has no backend, framework, package install, or build step.
+The project is a static GitHub Pages app. It has no backend, framework, package install, or build step. It can also be installed to a phone home screen and played offline after the site has been opened once online.
+
+## Offline Web App
+
+- Open `https://crixppp.github.io/hunted/` once while online so the browser can cache the game.
+- On iPhone, use Share -> Add to Home Screen. On Android or desktop Chrome, use Install app when prompted or from the browser menu.
+- After the first online load, the app shell, icons, images, and sound cues are available offline from the installed app or the same browser.
+- Open the app once online after future updates so the latest files can be cached.
 
 ## How to Play
 
@@ -51,5 +58,7 @@ The project is a static GitHub Pages app. It has no backend, framework, package 
 - `index.html` - static app markup.
 - `style.css` - mobile-first cinematic UI.
 - `app.js` - game flow, audio, timer recovery, wake lock, and controls.
+- `manifest.webmanifest` - installable web app metadata.
+- `service-worker.js` - offline cache for the app shell and game assets.
 - `chime.MP3` and `horror-stinger.mp3` - game cue assets.
-- `logo.png` and `favicon.png` - visual assets.
+- `logo.png` and `favicon.png` - visual assets and install icon.
